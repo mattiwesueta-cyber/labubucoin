@@ -1,0 +1,220 @@
+* {
+	margin: 0px;
+	padding: 0px;
+	box-sizing: border-box;
+	user-select: none;  
+}
+
+body, html {
+	position: relative;
+	height: 100%;
+	width: 100%;
+	font-size: 0.7292vw;
+	overflow: hidden;
+	color: white;
+}
+.form {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100vw;
+	height: 100vh;
+}
+span, div:not(.form), img, svg, path, input {
+	transition: all 0.3s ease;
+}
+.main_game {
+	width: 100vw;
+	height: 100%;
+	background-image: url('../images/bg.png');
+	background-size: 100% 100%;
+	border-radius: 3.7351vw;
+	overflow: hidden;
+	padding: 8.489vw;	
+}
+.left_header {
+	gap: 1.6978vw;
+}
+.left_header img {
+	width: 7.3005vw;
+	height: 7.3005vw;
+	background: gray;
+	border-radius: 100%;
+}
+.row_header span:first-child {
+	font-size: 2.7165vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.5);
+}
+.row_header span:last-child {
+	font-size: 3.3956vw;
+	font-family: 'Medium';
+}
+.desc_coins {
+	font-size: 3.9049vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.75);
+}
+.flex_balance {
+	gap: 2.3769vw;
+}
+.flex_balance img {
+	width: 6.7912vw;
+	height: 6.791vw;
+	border-radius: 100%;
+	box-shadow: 0 0 4.924vw rgba(242, 198, 194, 0.25);
+}
+.flex_balance span {
+	font-size: 6.961vw;
+	font-family: 'Travels';
+}
+.main_info {
+	position: absolute;
+	left: 50%;
+	top: 38.8795vw;
+	transform: translateX(-50%);
+}
+.pannel_i {
+	height: 9.3379vw;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 56.5365vw;
+	gap: 1.3582vw;
+	flex-shrink: 0;
+	padding: 1.019vw 2.716vw 1.019vw 1.019vw;
+}
+.circ_i {
+	width: 6.961vw;
+	height: 6.961vw;
+	border: 0.17vw solid #fff1b8;
+	box-shadow: 0 1.188vw 6.282vw rgba(255, 241, 184, 0.25), inset 0 0.679vw 0.679vw rgba(255, 255, 255, 0.25);
+	background: linear-gradient(180deg, #e2d6a9 0%, #b2a678 100%);
+	border-radius: 100%;
+}
+.circ_i svg {
+	width: 4.0747vw;
+	height: 4.0747vw;
+}
+.desc_i {
+	font-size: 2.7165vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.5);
+}
+.flex_i span {
+	font-size: 3.396vw;
+	font-family: 'Medium';
+}
+.box_icon {
+	padding: 0vw 0.679vw;
+	height: 3.7351vw;
+	border-radius: 0.509vw;
+	background: #fff1b8;
+	font-size: 2.3769vw;
+	font-family: 'SemiBold';
+	color: rgba(0, 0, 0, 0.75);
+}
+.flex_i {
+	gap: 0.6791vw;
+}
+.flex_pannels_info {
+	margin-top: 3.3956vw;
+	gap: 2.5467vw;
+}
+.blue_pannel .circ_i {
+	border: 0.17vw solid #a9c2e2;
+	box-shadow: 0 1.188vw 6.282vw rgba(169, 194, 226, 0.25), inset 0 0.679vw 0.679vw  rgba(255, 255, 255, 0.25);
+	background: linear-gradient(180deg, #a9c2e2 0%, #7e93ae 100%);
+}
+.green_pannel .circ_i {
+	border: 0.17vw solid #bad3ae;
+	box-shadow: 0 1.188vw 6.282vw 0 rgba(186, 211, 174, 0.25), inset 0 0.679vw 0.679vw rgba(255, 255, 255, 0.25);
+	background: linear-gradient(180deg, #bad3ae 0%, #87a17b 100%);
+}
+.green_pannel .box_icon {
+	background: #bad3ae;
+}
+.labubu_cont {
+	width: 79.2869vw;
+	height: 79.2869vw;
+	position: absolute;
+	bottom: 36.8421vw;
+}
+.circle_bg {
+	background-image: url('../images/circle.png');
+	background-size: 100% 100%;
+	width: 79.2869vw;
+	height: 79.2869vw;
+}
+.labubu_pic {
+	height: 74.1935vw;
+	position: absolute;
+	margin-bottom: 12vw;
+}
+.bg_under_circle {
+	width: 92.02vw;
+	height: 82.5127vw;
+	position: absolute;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	border-radius: 4.0747vw;
+	background: linear-gradient(180deg, rgba(242, 198, 194, 0.25) 0%, rgba(0, 0, 0, 0) 100%);
+}
+.numbers_cont {
+	position: absolute;
+	width: 79.2869vw;
+	height: 79.2869vw;
+}
+.numbers_cont span {
+	font-size: 10.3565vw;
+	font-family: 'SemiBold';
+}
+
+
+
+
+
+
+.flexend {
+	align-items: flex-end;
+}
+.gap16 {
+	gap: 0.83333vw;
+}
+.gap8 {
+	gap: 0.41667vw;
+}
+.gap12 {
+	gap: 0.625vw;
+}
+.space {
+	justify-content: space-between;
+}
+.w100 {
+	width: 100%;
+}
+.h100 {
+	height: 100%;
+}
+.tc {
+	text-align: center;
+}
+.clmn {
+	display: flex;
+	flex-direction: column;
+}
+.flex {
+	display: flex;
+}
+.alcn {
+	display: flex;
+	align-items: center;
+}
+.jlcn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.rev {
+	flex-direction: row-reverse;
+}
