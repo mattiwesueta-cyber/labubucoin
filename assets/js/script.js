@@ -88,6 +88,7 @@ class LabubuGame {
         console.log('handleClick: userId =', this.userId, 'coins =', this.coins);
         this.updateBalanceInDB();
         this.spawnRandomProfitSpan(profit);
+        this.animateCircleBg();
     }
 
     showProfitAnimation(profit) {
@@ -253,6 +254,17 @@ class LabubuGame {
             labubuCont.style.position = 'relative';
             labubuCont.style.left = `${randLeft}vw`;
             labubuCont.style.top = `${randTop}vh`;
+        }
+    }
+
+    animateCircleBg() {
+        const circleBg = document.querySelector('.circle_bg');
+        if (circleBg) {
+            circleBg.style.transition = 'transform 0.15s';
+            circleBg.style.transform = 'scale(1.15)';
+            setTimeout(() => {
+                circleBg.style.transform = 'scale(1)';
+            }, 150);
         }
     }
 }
