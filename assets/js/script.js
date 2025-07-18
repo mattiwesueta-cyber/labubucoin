@@ -41,7 +41,7 @@ class LabubuGame {
     async loadUserBalance(userId) {
         try {
             // Замените URL на ваш backend-эндпоинт, если он другой
-            const res = await fetch(`https://labubucoin.vercel.app/api/balance?user_id=${userId}`);
+            const res = await fetch(`https://f8d94e2b13e5.ngrok-free.app/api/balance?user_id=${userId}`);
             if (!res.ok) throw new Error('Ошибка загрузки баланса');
             const data = await res.json();
             if (data && typeof data.balance !== 'undefined') {
