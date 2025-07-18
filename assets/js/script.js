@@ -16,54 +16,42 @@ class LabubuGame {
         this.setupEventListeners();
         this.startIncomeTimer();
         this.updateUI();
-        
-        // Получаем данные пользователя из URL параметров
-        this.loadUserData();
-        
-        // Инициализация Telegram Web App
-        if (window.Telegram && window.Telegram.WebApp) {
-            this.initTelegram();
-        }
+
+        // Получаем данные пользователя через Telegram WebApp API
+        this.loadTelegramUser();
     }
 
-    loadUserData() {
-        // Получаем параметры из URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const username = urlParams.get('username');
-        const userId = urlParams.get('user_id');
-        const firstName = urlParams.get('first_name');
-        
-        // Отображаем username в элементе user_id
-        const userElement = document.getElementById('user_id');
-        if (userElement) {
-            if (username) {
-                userElement.textContent = `@${username}`;
-            } else if (firstName) {
-                userElement.textContent = firstName;
-            } else {
-                userElement.textContent = 'Player';
+    async loadTelegramUser() {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+            const user = window.Telegram.WebApp.initDataUnsafe.user;
+            // Отображаем username или имя
+            const userElement = document.getElementById('user_id');
+            if (userElement) {
+                userElement.textContent = user.username ? `@${user.username}` : user.first_name;
             }
-        }
-        
-        console.log('👤 User data loaded:', { username, userId, firstName });
-    }
-
-    initTelegram() {
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        
-        // Получаем данные пользователя
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const user = tg.initDataUnsafe.user;
-            this.updateUsername(user.username || user.first_name);
+            // Загружаем баланс из backend/Supabase
+            this.loadUserBalance(user.id);
+        } else {
+            // Если не удалось получить пользователя, скрываем имя
+            const userElement = document.getElementById('user_id');
+            if (userElement) userElement.textContent = 'Player';
         }
     }
 
-    updateUsername(username) {
-        const usernameElement = document.querySelector('.row_header span:last-child');
-        if (usernameElement) {
-            usernameElement.textContent = `@${username}`;
+    async loadUserBalance(userId) {
+        try {
+            // Замените URL на ваш backend-эндпоинт, если он другой
+            const res = await fetch(`https://labubucoin.vercel.app/api/balance?user_id=${userId}`);
+            if (!res.ok) throw new Error('Ошибка загрузки баланса');
+            const data = await res.json();
+            if (data && typeof data.balance !== 'undefined') {
+                const balanceElement = document.querySelector('.flex_balance span');
+                if (balanceElement) {
+                    balanceElement.textContent = this.formatNumber(data.balance);
+                }
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки баланса:', e);
         }
     }
 
