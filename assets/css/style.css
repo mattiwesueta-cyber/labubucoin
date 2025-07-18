@@ -161,6 +161,7 @@ span, div:not(.form), img, svg, path, input {
 	background: linear-gradient(180deg, rgba(242, 198, 194, 0.25) 0%, rgba(0, 0, 0, 0) 100%);
 }
 .numbers_cont {
+	pointer-events: none;
 	position: absolute;
 	width: 79.2869vw;
 	height: 79.2869vw;

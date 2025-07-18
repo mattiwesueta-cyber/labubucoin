@@ -82,18 +82,12 @@ class LabubuGame {
     handleClick() {
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
-        
-        // Показываем анимацию прибыли
         this.showProfitAnimation(profit);
-        
-        // Обновляем UI
         this.updateUI();
-        
-        // Сохраняем данные локально
         this.saveGameData();
         console.log('handleClick: userId =', this.userId, 'coins =', this.coins);
-        // Обновляем баланс в базе
         this.updateBalanceInDB();
+        this.spawnRandomProfitSpan(profit);
     }
 
     showProfitAnimation(profit) {
@@ -107,6 +101,30 @@ class LabubuGame {
                 numbersCont.style.opacity = '0';
                 numbersCont.style.transform = 'scale(1)';
             }, 1000);
+        }
+    }
+
+    spawnRandomProfitSpan(profit) {
+        const numbersCont = document.querySelector('.numbers_cont');
+        if (numbersCont) {
+            const span = document.createElement('span');
+            span.textContent = `+${profit}`;
+            span.style.position = 'absolute';
+            // Рандомная позиция внутри контейнера (от 10% до 90%)
+            span.style.left = `${10 + Math.random() * 80}%`;
+            span.style.top = `${10 + Math.random() * 80}%`;
+            span.style.pointerEvents = 'none';
+            span.style.transition = 'opacity 0.8s, transform 0.8s';
+            span.style.opacity = '1';
+            span.style.transform = 'scale(1.2)';
+            numbersCont.appendChild(span);
+            setTimeout(() => {
+                span.style.opacity = '0';
+                span.style.transform = 'scale(1)';
+            }, 50);
+            setTimeout(() => {
+                numbersCont.removeChild(span);
+            }, 900);
         }
     }
 
@@ -223,6 +241,18 @@ class LabubuGame {
             console.log('updateBalanceInDB: response', result);
         } catch (e) {
             console.error('Ошибка обновления баланса в БД:', e);
+        }
+    }
+
+    randomizeLabubuPosition() {
+        const labubuCont = document.querySelector('.labubu_cont');
+        if (labubuCont) {
+            // Рандомное смещение: left и top в пределах ±5vw/±5vh
+            const randLeft = (Math.random() - 0.5) * 10; // от -5 до +5
+            const randTop = (Math.random() - 0.5) * 10;  // от -5 до +5
+            labubuCont.style.position = 'relative';
+            labubuCont.style.left = `${randLeft}vw`;
+            labubuCont.style.top = `${randTop}vh`;
         }
     }
 }
