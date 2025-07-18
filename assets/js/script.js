@@ -72,16 +72,10 @@ class LabubuGame {
     }
 
     setupEventListeners() {
-        // Клик по Labubu
-        const labubuPic = document.querySelector('.labubu_pic');
-        if (labubuPic) {
-            labubuPic.addEventListener('click', () => this.handleClick());
-        }
-
-        // Клик по кругу
-        const circleBg = document.querySelector('.circle_bg');
-        if (circleBg) {
-            circleBg.addEventListener('click', () => this.handleClick());
+        // Клик только по .labubu_cont
+        const labubuCont = document.querySelector('.labubu_cont');
+        if (labubuCont) {
+            labubuCont.addEventListener('click', () => this.handleClick());
         }
     }
 

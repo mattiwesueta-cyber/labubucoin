@@ -168,6 +168,7 @@ span, div:not(.form), img, svg, path, input {
 .numbers_cont span {
 	font-size: 10.3565vw;
 	font-family: 'SemiBold';
+	opacity: 0;
 }
 
 
