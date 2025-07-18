@@ -20,26 +20,21 @@ class LabubuGame {
         this.loadTelegramUser();
     }
 
-
     async loadTelegramUser(retry = 0) {
         try {
-            this.showDebugInfo('Пробую получить Telegram WebApp API... (попытка ' + (retry+1) + ')');
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 const user = window.Telegram.WebApp.initDataUnsafe.user;
-                this.showDebugInfo('User из Telegram: ' + JSON.stringify(user));
                 // Отображаем username или имя
                 const userElement = document.getElementById('user_id');
                 if (userElement) {
                     userElement.textContent = user.username ? `@${user.username}` : user.first_name;
                 }
                 // Загружаем баланс из backend/Supabase
-                this.showDebugInfo('user_id для баланса: ' + user.id);
                 await this.loadUserBalance(user.id);
             } else {
                 if (retry < 5) {
                     setTimeout(() => this.loadTelegramUser(retry + 1), 400);
                 } else {
-                    this.showDebugInfo('Нет данных пользователя в Telegram WebApp API после 5 попыток!');
                     // Показываем крупное сообщение на экран
                     let warn = document.getElementById('tg_api_warn');
                     if (!warn) {
@@ -54,18 +49,14 @@ class LabubuGame {
                 }
             }
         } catch (e) {
-            this.showDebugInfo('Ошибка в loadTelegramUser: ' + e);
         }
     }
 
     async loadUserBalance(userId) {
         try {
             const balanceUrl = `https://labubucoin.vercel.app/api/balance?user_id=${userId}`;
-            this.showDebugInfo('Запрос баланса: ' + balanceUrl);
             const res = await fetch(balanceUrl);
-            this.showDebugInfo('Ответ status: ' + res.status);
             const data = await res.json();
-            this.showDebugInfo('Ответ JSON: ' + JSON.stringify(data));
             if (data && typeof data.balance !== 'undefined') {
                 this.coins = data.balance; // <-- обновляем баланс
                 const balanceElement = document.querySelector('.flex_balance span');
@@ -73,10 +64,8 @@ class LabubuGame {
                     balanceElement.textContent = this.formatNumber(this.coins);
                 }
             } else {
-                this.showDebugInfo('Нет поля balance в ответе!');
             }
         } catch (e) {
-            this.showDebugInfo('Ошибка загрузки баланса: ' + e);
         }
     }
 
