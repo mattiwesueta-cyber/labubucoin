@@ -25,6 +25,12 @@ class LabubuGame {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 const user = window.Telegram.WebApp.initDataUnsafe.user;
                 this.userId = user.id; // сохраняем userId
+                // Устанавливаем аватар
+                const avatarImg = document.getElementById('tg_avatar');
+                if (avatarImg && user.photo_url) {
+                    avatarImg.src = user.photo_url;
+                    avatarImg.alt = user.username || 'avatar';
+                }
                 // Отображаем username или имя
                 const userElement = document.getElementById('user_id');
                 if (userElement) {
