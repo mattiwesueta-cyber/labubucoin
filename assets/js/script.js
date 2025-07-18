@@ -20,17 +20,6 @@ class LabubuGame {
         this.loadTelegramUser();
     }
 
-    showDebugInfo(message) {
-        let debugDiv = document.getElementById('debug_info');
-        if (!debugDiv) {
-            debugDiv = document.createElement('div');
-            debugDiv.id = 'debug_info';
-            debugDiv.style = 'position:fixed;bottom:0;left:0;right:0;max-height:200px;overflow:auto;background:#222;color:#fff;font-size:12px;z-index:9999;padding:8px;opacity:0.95;';
-            document.body.appendChild(debugDiv);
-        }
-        debugDiv.innerHTML += `<div>${message}</div>`;
-    }
-
     async loadTelegramUser(retry = 0) {
         try {
             this.showDebugInfo('Пробую получить Telegram WebApp API... (попытка ' + (retry+1) + ')');
