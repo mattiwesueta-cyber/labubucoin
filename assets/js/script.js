@@ -49,6 +49,7 @@ class LabubuGame {
                 }
             }
         } catch (e) {
+            console.error(e);
         }
     }
 
@@ -63,9 +64,9 @@ class LabubuGame {
                 if (balanceElement) {
                     balanceElement.textContent = this.formatNumber(this.coins);
                 }
-            } else {
             }
         } catch (e) {
+            console.error(e);
         }
     }
 
