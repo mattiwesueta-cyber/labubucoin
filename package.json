@@ -1,0 +1,7 @@
+{
+    "name": "labubu_game",
+    "version": "1.0.0",
+    "dependencies": {
+      "@supabase/supabase-js": "^2.52.0"
+    }
+  }
