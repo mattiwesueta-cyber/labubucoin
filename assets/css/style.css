@@ -144,6 +144,7 @@ span, div:not(.form), img, svg, path, input {
 	background-size: 100% 100%;
 	width: 79.2869vw;
 	height: 79.2869vw;
+	transition: transform 0.05s !important;
 }
 .labubu_pic {
 	height: 74.1935vw;
