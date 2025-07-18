@@ -21,37 +21,59 @@ class LabubuGame {
         this.loadTelegramUser();
     }
 
+    showDebugInfo(message) {
+        let debugDiv = document.getElementById('debug_info');
+        if (!debugDiv) {
+            debugDiv = document.createElement('div');
+            debugDiv.id = 'debug_info';
+            debugDiv.style = 'position:fixed;bottom:0;left:0;right:0;max-height:200px;overflow:auto;background:#222;color:#fff;font-size:12px;z-index:9999;padding:8px;opacity:0.95;';
+            document.body.appendChild(debugDiv);
+        }
+        debugDiv.innerHTML += `<div>${message}</div>`;
+    }
+
     async loadTelegramUser() {
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            const user = window.Telegram.WebApp.initDataUnsafe.user;
-            // Отображаем username или имя
-            const userElement = document.getElementById('user_id');
-            if (userElement) {
-                userElement.textContent = user.username ? `@${user.username}` : user.first_name;
+        try {
+            this.showDebugInfo('Пробую получить Telegram WebApp API...');
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                const user = window.Telegram.WebApp.initDataUnsafe.user;
+                this.showDebugInfo('User из Telegram: ' + JSON.stringify(user));
+                // Отображаем username или имя
+                const userElement = document.getElementById('user_id');
+                if (userElement) {
+                    userElement.textContent = user.username ? `@${user.username}` : user.first_name;
+                }
+                // Загружаем баланс из backend/Supabase
+                this.showDebugInfo('user_id для баланса: ' + user.id);
+                await this.loadUserBalance(user.id);
+            } else {
+                this.showDebugInfo('Нет данных пользователя в Telegram WebApp API!');
+                const userElement = document.getElementById('user_id');
+                if (userElement) userElement.textContent = 'Player';
             }
-            // Загружаем баланс из backend/Supabase
-            this.loadUserBalance(user.id);
-        } else {
-            // Если не удалось получить пользователя, скрываем имя
-            const userElement = document.getElementById('user_id');
-            if (userElement) userElement.textContent = 'Player';
+        } catch (e) {
+            this.showDebugInfo('Ошибка в loadTelegramUser: ' + e);
         }
     }
 
     async loadUserBalance(userId) {
         try {
-            // Замените URL на ваш backend-эндпоинт, если он другой
-            const res = await fetch(`https://f8d94e2b13e5.ngrok-free.app/api/balance?user_id=${userId}`);
-            if (!res.ok) throw new Error('Ошибка загрузки баланса');
+            const url = `https://f8d94e2b13e5.ngrok-free.app/api/balance?user_id=${userId}`;
+            this.showDebugInfo('Запрос баланса: ' + url);
+            const res = await fetch(url);
+            this.showDebugInfo('Ответ status: ' + res.status);
             const data = await res.json();
+            this.showDebugInfo('Ответ JSON: ' + JSON.stringify(data));
             if (data && typeof data.balance !== 'undefined') {
                 const balanceElement = document.querySelector('.flex_balance span');
                 if (balanceElement) {
                     balanceElement.textContent = this.formatNumber(data.balance);
                 }
+            } else {
+                this.showDebugInfo('Нет поля balance в ответе!');
             }
         } catch (e) {
-            console.error('Ошибка загрузки баланса:', e);
+            this.showDebugInfo('Ошибка загрузки баланса: ' + e);
         }
     }
 
