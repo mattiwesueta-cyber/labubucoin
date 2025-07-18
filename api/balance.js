@@ -10,13 +10,20 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'user_id is required' });
   }
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('players')
       .select('balance')
       .eq('tg_id', user_id)
       .single();
     if (error || !data) {
-      return res.status(404).json({ error: 'User not found' });
+      // Если пользователя нет — создаём его с балансом 0
+      const { error: insertError } = await supabase
+        .from('players')
+        .insert([{ tg_id: user_id, balance: 0 }]);
+      if (insertError) {
+        return res.status(500).json({ error: 'Failed to create user' });
+      }
+      return res.status(200).json({ balance: 0 });
     }
     res.status(200).json({ balance: data.balance || 0 });
   } catch (e) {
