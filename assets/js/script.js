@@ -97,6 +97,7 @@ class LabubuGame {
         
         // Сохраняем данные локально
         this.saveGameData();
+        console.log('handleClick: userId =', this.userId, 'coins =', this.coins);
         // Обновляем баланс в базе
         this.updateBalanceInDB();
     }
@@ -214,13 +215,18 @@ class LabubuGame {
     }
 
     async updateBalanceInDB() {
-        if (!this.userId) return;
+        if (!this.userId) {
+            console.warn('updateBalanceInDB: userId is null!');
+            return;
+        }
         try {
-            await fetch(`https://labubucoin.vercel.app/api/update-balance`, {
+            const response = await fetch(`https://labubucoin.vercel.app/api/update-balance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: this.userId, balance: this.coins })
             });
+            const result = await response.json();
+            console.log('updateBalanceInDB: response', result);
         } catch (e) {
             console.error('Ошибка обновления баланса в БД:', e);
         }
