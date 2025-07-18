@@ -2,9 +2,9 @@
 class LabubuGame {
     constructor() {
         this.coins = 0;
-        this.stableIncome = 3.65;
+        this.stableIncome = 0;
         this.profitPerClick = 1;
-        this.boost = 2;
+        this.boost = 0;
         this.boostTimeLeft = 0;
         this.isBoostActive = false;
         
@@ -14,7 +14,6 @@ class LabubuGame {
     init() {
         this.loadGameData();
         this.setupEventListeners();
-        this.startIncomeTimer();
         this.updateUI();
 
         // Получаем данные пользователя через Telegram WebApp API
@@ -71,16 +70,17 @@ class LabubuGame {
 
     async loadUserBalance(userId) {
         try {
-            const balanceUrl = `https://labubucoin.vercel.app//api/balance?user_id=${userId}`;
+            const balanceUrl = `https://labubucoin.vercel.app/api/balance?user_id=${userId}`;
             this.showDebugInfo('Запрос баланса: ' + balanceUrl);
             const res = await fetch(balanceUrl);
             this.showDebugInfo('Ответ status: ' + res.status);
             const data = await res.json();
             this.showDebugInfo('Ответ JSON: ' + JSON.stringify(data));
             if (data && typeof data.balance !== 'undefined') {
+                this.coins = data.balance; // <-- обновляем баланс
                 const balanceElement = document.querySelector('.flex_balance span');
                 if (balanceElement) {
-                    balanceElement.textContent = this.formatNumber(data.balance);
+                    balanceElement.textContent = this.formatNumber(this.coins);
                 }
             } else {
                 this.showDebugInfo('Нет поля balance в ответе!');
@@ -132,23 +132,7 @@ class LabubuGame {
         }
     }
 
-    startIncomeTimer() {
-        setInterval(() => {
-            if (this.isBoostActive) {
-                this.coins += this.stableIncome * this.boost;
-                this.boostTimeLeft--;
-                
-                if (this.boostTimeLeft <= 0) {
-                    this.isBoostActive = false;
-                }
-            } else {
-                this.coins += this.stableIncome;
-            }
-            
-            this.updateUI();
-            this.saveGameData();
-        }, 1000);
-    }
+    // Удаляю startIncomeTimer полностью
 
     updateUI() {
         // Обновляем баланс монет
