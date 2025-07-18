@@ -5,7 +5,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
-  const { user_id } = req.query;
+  const { user_id, username, first_name, last_name } = req.query;
   if (!user_id) {
     return res.status(400).json({ error: 'user_id is required' });
   }
@@ -16,10 +16,17 @@ export default async function handler(req, res) {
       .eq('tg_id', user_id)
       .single();
     if (error || !data) {
-      // Если пользователя нет — создаём его с балансом 0
+      // Если пользователя нет — создаём его с балансом 0 и дополнительными полями
+      const insertData = {
+        tg_id: user_id,
+        balance: 0
+      };
+      if (username) insertData.username = username;
+      if (first_name) insertData.first_name = first_name;
+      if (last_name) insertData.last_name = last_name;
       const { error: insertError } = await supabase
         .from('players')
-        .insert([{ tg_id: user_id, balance: 0 }]);
+        .insert([insertData]);
       if (insertError) {
         return res.status(500).json({ error: 'Failed to create user' });
       }
