@@ -32,9 +32,9 @@ class LabubuGame {
         debugDiv.innerHTML += `<div>${message}</div>`;
     }
 
-    async loadTelegramUser() {
+    async loadTelegramUser(retry = 0) {
         try {
-            this.showDebugInfo('Пробую получить Telegram WebApp API...');
+            this.showDebugInfo('Пробую получить Telegram WebApp API... (попытка ' + (retry+1) + ')');
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 const user = window.Telegram.WebApp.initDataUnsafe.user;
                 this.showDebugInfo('User из Telegram: ' + JSON.stringify(user));
@@ -47,9 +47,22 @@ class LabubuGame {
                 this.showDebugInfo('user_id для баланса: ' + user.id);
                 await this.loadUserBalance(user.id);
             } else {
-                this.showDebugInfo('Нет данных пользователя в Telegram WebApp API!');
-                const userElement = document.getElementById('user_id');
-                if (userElement) userElement.textContent = 'Player';
+                if (retry < 5) {
+                    setTimeout(() => this.loadTelegramUser(retry + 1), 400);
+                } else {
+                    this.showDebugInfo('Нет данных пользователя в Telegram WebApp API после 5 попыток!');
+                    // Показываем крупное сообщение на экран
+                    let warn = document.getElementById('tg_api_warn');
+                    if (!warn) {
+                        warn = document.createElement('div');
+                        warn.id = 'tg_api_warn';
+                        warn.style = 'position:fixed;top:0;left:0;right:0;background:#c00;color:#fff;font-size:20px;z-index:10000;padding:20px;text-align:center;';
+                        warn.textContent = 'Нет данных пользователя из Telegram! Перезапустите игру через Telegram-клиент.';
+                        document.body.appendChild(warn);
+                    }
+                    const userElement = document.getElementById('user_id');
+                    if (userElement) userElement.textContent = 'Player';
+                }
             }
         } catch (e) {
             this.showDebugInfo('Ошибка в loadTelegramUser: ' + e);
