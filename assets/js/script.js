@@ -7,7 +7,7 @@ class LabubuGame {
         this.boost = 0;
         this.boostTimeLeft = 0;
         this.isBoostActive = false;
-        
+        this.userId = null; // сохраняем userId для обновления баланса
         this.init();
     }
 
@@ -24,6 +24,7 @@ class LabubuGame {
         try {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 const user = window.Telegram.WebApp.initDataUnsafe.user;
+                this.userId = user.id; // сохраняем userId
                 // Отображаем username или имя
                 const userElement = document.getElementById('user_id');
                 if (userElement) {
@@ -94,8 +95,10 @@ class LabubuGame {
         // Обновляем UI
         this.updateUI();
         
-        // Сохраняем данные
+        // Сохраняем данные локально
         this.saveGameData();
+        // Обновляем баланс в базе
+        this.updateBalanceInDB();
     }
 
     showProfitAnimation(profit) {
@@ -207,6 +210,19 @@ class LabubuGame {
             } catch (error) {
                 console.error('Ошибка загрузки данных игры:', error);
             }
+        }
+    }
+
+    async updateBalanceInDB() {
+        if (!this.userId) return;
+        try {
+            await fetch(`https://labubucoin.vercel.app/api/update-balance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: this.userId, balance: this.coins })
+            });
+        } catch (e) {
+            console.error('Ошибка обновления баланса в БД:', e);
         }
     }
 }
