@@ -17,10 +17,35 @@ class LabubuGame {
         this.startIncomeTimer();
         this.updateUI();
         
+        // Получаем данные пользователя из URL параметров
+        this.loadUserData();
+        
         // Инициализация Telegram Web App
         if (window.Telegram && window.Telegram.WebApp) {
             this.initTelegram();
         }
+    }
+
+    loadUserData() {
+        // Получаем параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('username');
+        const userId = urlParams.get('user_id');
+        const firstName = urlParams.get('first_name');
+        
+        // Отображаем username в элементе user_id
+        const userElement = document.getElementById('user_id');
+        if (userElement) {
+            if (username) {
+                userElement.textContent = `@${username}`;
+            } else if (firstName) {
+                userElement.textContent = firstName;
+            } else {
+                userElement.textContent = 'Player';
+            }
+        }
+        
+        console.log('👤 User data loaded:', { username, userId, firstName });
     }
 
     initTelegram() {
