@@ -71,7 +71,7 @@ class LabubuGame {
 
     async loadUserBalance(userId) {
         try {
-            const balanceUrl = `https://f8d94e2b13e5.ngrok-free.app/api/balance?user_id=${userId}`;
+            const balanceUrl = `https://labubucoin.vercel.app//api/balance?user_id=${userId}`;
             this.showDebugInfo('Запрос баланса: ' + balanceUrl);
             const res = await fetch(balanceUrl);
             this.showDebugInfo('Ответ status: ' + res.status);
