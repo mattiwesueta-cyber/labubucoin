@@ -71,8 +71,9 @@ class LabubuGame {
 
     async loadUserBalance(userId) {
         try {
-            const res = await fetch(`https://labubucoin.vercel.app/api/balance?user_id=${userId}`);
-            this.showDebugInfo('Запрос баланса: ' + url);
+            const balanceUrl = `https://labubucoin.vercel.app/api/balance?user_id=${userId}`;
+            this.showDebugInfo('Запрос баланса: ' + balanceUrl);
+            const res = await fetch(balanceUrl);
             this.showDebugInfo('Ответ status: ' + res.status);
             const data = await res.json();
             this.showDebugInfo('Ответ JSON: ' + JSON.stringify(data));
