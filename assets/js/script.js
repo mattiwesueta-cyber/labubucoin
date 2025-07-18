@@ -266,10 +266,9 @@ class LabubuGame {
     animateCircleBg() {
         const circleBg = document.querySelector('.circle_bg');
         if (circleBg) {
-            circleBg.style.transition = 'transform 0.05s';
-            circleBg.style.transform = 'scale(0.9)';
+            circleBg.style.transform = 'scale(0.9) translateZ(0)';
             setTimeout(() => {
-                circleBg.style.transform = 'scale(1)';
+                circleBg.style.transform = 'scale(1) translateZ(0)';
             }, 50);
         }
     }
