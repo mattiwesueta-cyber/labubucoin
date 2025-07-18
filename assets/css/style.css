@@ -149,6 +149,7 @@ span, div:not(.form), img, svg, path, input {
 	height: 74.1935vw;
 	position: absolute;
 	margin-bottom: 12vw;
+	user-select: none;
 }
 .bg_under_circle {
 	width: 92.02vw;
