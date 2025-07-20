@@ -1,10 +1,13 @@
 // 🗄️ Database operations for LabubuCoin
+// Для работы этого файла требуется сборщик (webpack/vite) и npm install @supabase/supabase-js
+import { createClient } from '@supabase/supabase-js';
+
 class GameDatabase {
     constructor() {
         this.supabaseUrl = 'https://akomgazktlvymcgafnor.supabase.co';
         this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrb21nYXprdGx2eW1jZ2Fmbm9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3OTMzNjQsImV4cCI6MjA2ODM2OTM2NH0.tDCQREuF0CIXzJdXUVEkKXidq70fypvqmFWgQZjjy34';
-        this.supabase = null;
-        this.init();
+        this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
+        console.log('✅ Supabase подключен');
     }
 
     async init() {
