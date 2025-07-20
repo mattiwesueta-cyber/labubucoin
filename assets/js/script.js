@@ -112,6 +112,11 @@ class LabubuGame {
             // Рандомная позиция внутри контейнера (от 10% до 90%)
             span.style.left = `${10 + Math.random() * 80}%`;
             span.style.top = `${10 + Math.random() * 80}%`;
+            // Рандомный размер шрифта от 5vw до 10.3565vw
+            const minFontSize = 5; // vw
+            const maxFontSize = 10.3565; // vw
+            const fontSize = minFontSize + Math.random() * (maxFontSize - minFontSize);
+            span.style.fontSize = `${fontSize}vw`;
             span.style.pointerEvents = 'none';
             span.style.transition = 'opacity 0.8s, transform 0.8s';
             span.style.opacity = '1';
