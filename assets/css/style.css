@@ -233,6 +233,9 @@ span, div:not(.form), img, svg, path, input {
 	top: 0;
 	height: 100%;
 }
+.wrapper_lb {
+	width: 26.6553vw;
+}
 .box_lb img {
 	height: 13.6384vw;
 	margin: auto;
@@ -282,6 +285,7 @@ span, div:not(.form), img, svg, path, input {
 	bottom: 0;
 	width: 92.0204vw;
 	left: 50%;
+	padding: 2.7165vw;
 	transform: translateX(-50%);
 	height: 119.0153vw;
 	background: linear-gradient(180deg, rgba(242, 198, 194, 0.25) 0%, rgba(0, 0, 0, 0) 100%);
@@ -315,6 +319,28 @@ span, div:not(.form), img, svg, path, input {
 .pr_wrapper span {
 	font-size: 2.3769vw;
 	font-family: 'Medium';
+}
+.head_desc span:first-child {
+	font-size: 3.3956vw;
+	font-family: 'Medium';
+}
+.head_desc span:last-child {
+	font-size: 3.056vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.75);
+}
+.overflow_up {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 2.0374vw;
+	height: 79.966vw;
+	margin-top: 2.3769vw;
+	overflow-y: auto;
+}
+.overflow_up::-webkit-scrollbar {
+	display: none;
 }
 
 
