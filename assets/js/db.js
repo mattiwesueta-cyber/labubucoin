@@ -1,7 +1,4 @@
 // 🗄️ Database operations for LabubuCoin
-// Для работы этого файла требуется сборщик (webpack/vite) и npm install @supabase/supabase-js
-import { createClient } from '@supabase/supabase-js';
-
 class GameDatabase {
     constructor() {
         this.supabaseUrl = 'https://akomgazktlvymcgafnor.supabase.co';
@@ -22,7 +19,6 @@ class GameDatabase {
 
     async savePlayerData(userId, gameData) {
         if (!this.supabase) return false;
-        
         try {
             const { error } = await this.supabase
                 .from('players')
@@ -36,7 +32,6 @@ class GameDatabase {
                     is_boost_active: gameData.isBoostActive,
                     last_updated: new Date().toISOString()
                 }, { onConflict: 'tg_id' });
-
             if (error) throw error;
             return true;
         } catch (error) {
@@ -47,14 +42,12 @@ class GameDatabase {
 
     async loadPlayerData(userId, username = null) {
         if (!this.supabase) return null;
-        
         try {
             let { data, error } = await this.supabase
                 .from('players')
                 .select('*')
                 .eq('tg_id', userId.toString())
                 .single();
-
             if (error || !data) {
                 // Если игрока нет — создаём с дефолтными параметрами
                 const defaultData = {
@@ -86,7 +79,6 @@ class GameDatabase {
 
     async updatePlayerStats(userId, stats) {
         if (!this.supabase) return false;
-        
         try {
             const { error } = await this.supabase
                 .from('player_stats')
@@ -97,7 +89,6 @@ class GameDatabase {
                     play_time: stats.playTime || 0,
                     last_played: new Date().toISOString()
                 }, { onConflict: 'tg_id' });
-
             if (error) throw error;
             return true;
         } catch (error) {
