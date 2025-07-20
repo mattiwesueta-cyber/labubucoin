@@ -9,9 +9,8 @@ class GameDatabase {
 
     async init() {
         try {
-            // Динамически загружаем Supabase
-            const supabaseModule = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
-            const createClient = supabaseModule.createClient || supabaseModule.default?.createClient;
+            // Динамически загружаем Supabase v1 для браузера
+            const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1');
             this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
             console.log('✅ Supabase подключен');
         } catch (error) {
