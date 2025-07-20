@@ -146,7 +146,7 @@ span, div:not(.form), img, svg, path, input {
 	background-size: 100% 100%;
 	width: 79.2869vw;
 	height: 79.2869vw;
-	transition: transform 0.1s cubic-bezier(0.4,0,0.2,1) !important;
+	transition: transform 0.3s cubic-bezier(0.4,0,0.2,1) !important;
 	will-change: transform;
 }
 .labubu_pic {
@@ -225,6 +225,96 @@ span, div:not(.form), img, svg, path, input {
 .ctg_wrap svg {
 	width: 6.1121vw;
 	height: 6.1121vw;
+}
+.load_bg {
+	position: absolute;
+	width: 100%;
+	left: 0;
+	top: 0;
+	height: 100%;
+}
+.box_lb img {
+	height: 13.6384vw;
+	margin: auto;
+	flex-shrink: 0;
+}
+.box_lb {
+	width: 26.6553vw;
+	height: 32.5976vw;
+	border-radius: 1.528vw 1.528vw 0 0;
+	padding: 1.868vw;
+}
+.row_lb span:first-child {
+	font-size: 3.1239vw;
+	font-family: 'SemiBold';
+}
+.row_lb span:last-child {
+	font-size: 2.4992vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.5);
+}
+.line_lb {
+	height: 0.8489vw;
+	width: 2.7165vw;
+	border-radius: 37.691vw;
+}
+.red_box {
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0) -7.82%, rgba(255, 135, 116, 0.25) 100%), rgba(59, 47, 47, 0.72);
+}
+.red_box .line_lb {
+	background: #ff8774;
+}
+.desc_lb {
+	font-size: 2.4992vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.5);
+}
+.flex_i .circ_i {
+	width: 3.2666vw;
+	height: 3.2666vw;
+}
+.flex_i .circ_i svg {
+	width: 1.9117vw;
+	height: 1.9117vw;
+}
+.upgrade_page {
+	position: absolute;
+	bottom: 0;
+	width: 92.0204vw;
+	left: 50%;
+	transform: translateX(-50%);
+	height: 119.0153vw;
+	background: linear-gradient(180deg, rgba(242, 198, 194, 0.25) 0%, rgba(0, 0, 0, 0) 100%);
+	border-radius: 4.075vw;
+}
+.flex_i span {
+	font-size: 2.6859vw;
+}
+.desc_lb {
+	margin-bottom: 0.5093vw;
+}
+.pr_wrapper img {
+	height: 2.5467vw;
+	filter: drop-shadow(0 0.509vw 1.188vw rgba(255, 177, 172, 0.35));
+}
+.descr_price {
+	font-size: 2.4992vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.5);
+}
+.pr_wrapper {
+	gap: 0.8489vw;
+}
+.price_pannel {
+	height: 6.6214vw;
+	padding: 1.868vw;
+	background: rgba(255, 177, 172, 0.15);
+	border-top: 0.17vw solid rgba(255, 255, 255, 0.15);
+	border-radius: 0 0 1.528vw 1.528vw;
+}
+.pr_wrapper span {
+	font-size: 2.3769vw;
+	font-family: 'Medium';
 }
 
 
