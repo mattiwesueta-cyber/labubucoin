@@ -52,7 +52,7 @@ class GameDatabase {
                 const defaultData = {
                     tg_id: userId.toString(),
                     balance: 0,
-                    stable_income: 3.65,
+                    stable_income: 0,
                     profit_per_click: 1,
                     boost: 2,
                     boost_time_left: 0,
