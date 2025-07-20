@@ -6,13 +6,12 @@ class GameDatabase {
     constructor() {
         this.supabaseUrl = 'https://akomgazktlvymcgafnor.supabase.co';
         this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrb21nYXprdGx2eW1jZ2Fmbm9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3OTMzNjQsImV4cCI6MjA2ODM2OTM2NH0.tDCQREuF0CIXzJdXUVEkKXidq70fypvqmFWgQZjjy34';
-        this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
-        console.log('✅ Supabase подключен');
+        this.supabase = null;
+        this.init();
     }
 
     async init() {
         try {
-            // Динамически загружаем Supabase v1 для браузера
             const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1');
             this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
             console.log('✅ Supabase подключен');
