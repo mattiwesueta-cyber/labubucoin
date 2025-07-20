@@ -41,8 +41,8 @@ class LabubuGame {
                 if (userElement) {
                     userElement.textContent = user.username ? `@${user.username}` : user.first_name;
                 }
-                // Загружаем все игровые данные из Supabase
-                await this.loadPlayerDataFromDB(user.id);
+                // Загружаем все игровые данные из Supabase, передавая username
+                await this.loadPlayerDataFromDB(user.id, user.username);
             } else {
                 if (retry < 5) {
                     setTimeout(() => this.loadTelegramUser(retry + 1), 400);
@@ -57,9 +57,9 @@ class LabubuGame {
         }
     }
 
-    async loadPlayerDataFromDB(userId) {
+    async loadPlayerDataFromDB(userId, username = null) {
         if (!this.db) return;
-        const data = await this.db.loadPlayerData(userId);
+        const data = await this.db.loadPlayerData(userId, username);
         if (data) {
             this.coins = data.coins || 0;
             this.stableIncome = data.stable_income || 3.65;
