@@ -120,7 +120,7 @@ class LabubuGame {
             setTimeout(() => {
                 span.style.opacity = '0';
                 span.style.transform = 'scale(1)';
-            }, 50);
+            }, 150);
             setTimeout(() => {
                 numbersCont.removeChild(span);
             }, 900);
