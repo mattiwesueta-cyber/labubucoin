@@ -42,15 +42,7 @@ class LabubuGame {
                 if (retry < 5) {
                     setTimeout(() => this.loadTelegramUser(retry + 1), 400);
                 } else {
-                    // Показываем крупное сообщение на экран
-                    let warn = document.getElementById('tg_api_warn');
-                    if (!warn) {
-                        warn = document.createElement('div');
-                        warn.id = 'tg_api_warn';
-                        warn.style = 'position:fixed;top:0;left:0;right:0;background:#c00;color:#fff;font-size:20px;z-index:10000;padding:20px;text-align:center;';
-                        warn.textContent = 'Нет данных пользователя из Telegram! Перезапустите игру через Telegram-клиент.';
-                        document.body.appendChild(warn);
-                    }
+                    // Удаляю показ сообщения tg_api_warn
                     const userElement = document.getElementById('user_id');
                     if (userElement) userElement.textContent = 'Player';
                 }

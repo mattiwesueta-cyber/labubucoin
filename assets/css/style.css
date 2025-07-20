@@ -136,6 +136,8 @@ span, div:not(.form), img, svg, path, input {
 .labubu_cont {
 	width: 79.2869vw;
 	height: 79.2869vw;
+}
+.labubu_wrapper_main_page {
 	position: absolute;
 	bottom: 29.8421vw;
 }
@@ -173,6 +175,56 @@ span, div:not(.form), img, svg, path, input {
 	font-size: 10.3565vw;
 	font-family: 'SemiBold';
 	opacity: 0;
+}
+.upgrade_button {
+	width: 48.8964vw;
+	cursor: pointer;
+	gap: 1.3582vw;
+	height: 11.8846vw;
+	background: radial-gradient(66.48% 185.23% at 0% 35.94%, #F2C6C2 10.55%, rgba(242, 198, 194, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, radial-gradient(78.45% 156.63% at 44.89% 100%, #D3B8AE 0%, #FFE57D 80.98%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, linear-gradient(90deg, #FFB1AC 0%, #996A67 100%);
+	border: 0.34vw solid #FFF7D4;
+	box-shadow: 0vw 1.698vw 10.187vw rgba(255, 175, 175, 0.5), inset 0vw 0.509vw 1.138vw rgba(255, 255, 255, 0.75);
+	border-radius: 9.338vw;
+}
+.upgrade_button span  {
+	font-size: 3.9445vw;
+	font-family: 'Medium';
+}
+.upgrade_button  svg {
+	width: 4.0747vw;
+	height: 4.075vw;
+}
+.row_upgrade {
+	position: relative;
+	margin-top: -13.0747vw;
+}
+.descr_upgrade  {
+	font-size: 3.3956vw;
+	font-family: 'Regular';
+	margin-top: 2.0374vw;
+	color: rgba(255, 255, 255, 0.75);
+}
+.dashboard {
+	width: 100%;
+	height: 13.073vw;
+	padding: 1.698vw 2.377vw;
+	background: radial-gradient(45.98% 254.78% at 17.57% -162.63%, rgba(255, 241, 184, 0.25) 0%, rgba(255, 241, 184, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, radial-gradient(81.33% 642.94% at 121.49% 601.3%, #F2C6C2 0%, rgba(242, 198, 194, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, #352D2D;
+	border-radius: 94.228vw;
+}
+.wrapper_dashboard {
+	display: flex;
+	width: 92.02vw;
+	left: 50%;
+	transform: translateX(-50%);
+	position: absolute;
+	bottom: 7.6401vw;
+}
+.ctg_wrap {
+	width: 100%;
+}
+.ctg_wrap svg {
+	width: 6.1121vw;
+	height: 6.1121vw;
 }
 
 
