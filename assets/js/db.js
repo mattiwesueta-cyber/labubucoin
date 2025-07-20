@@ -23,10 +23,10 @@ class GameDatabase {
         
         try {
             const { error } = await this.supabase
-                .from('player_data')
+                .from('players')
                 .upsert({
                     tg_id: userId.toString(),
-                    coins: gameData.coins,
+                    balance: gameData.coins,
                     stable_income: gameData.stableIncome,
                     profit_per_click: gameData.profitPerClick,
                     boost: gameData.boost,
@@ -43,17 +43,38 @@ class GameDatabase {
         }
     }
 
-    async loadPlayerData(userId) {
+    async loadPlayerData(userId, username = null) {
         if (!this.supabase) return null;
         
         try {
-            const { data, error } = await this.supabase
-                .from('player_data')
+            let { data, error } = await this.supabase
+                .from('players')
                 .select('*')
                 .eq('tg_id', userId.toString())
                 .single();
 
-            if (error) throw error;
+            if (error || !data) {
+                // Если игрока нет — создаём с дефолтными параметрами
+                const defaultData = {
+                    tg_id: userId.toString(),
+                    balance: 0,
+                    stable_income: 3.65,
+                    profit_per_click: 1,
+                    boost: 2,
+                    boost_time_left: 0,
+                    is_boost_active: false,
+                    username: username || null,
+                    last_updated: new Date().toISOString()
+                };
+                const { error: insertError } = await this.supabase
+                    .from('players')
+                    .insert([defaultData]);
+                if (insertError) {
+                    console.error('❌ Ошибка создания игрока:', insertError);
+                    return null;
+                }
+                return defaultData;
+            }
             return data;
         } catch (error) {
             console.error('❌ Ошибка загрузки данных:', error);
