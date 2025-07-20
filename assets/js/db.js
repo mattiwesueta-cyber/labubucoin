@@ -7,10 +7,9 @@ class GameDatabase {
         this.init();
     }
 
-    async init() {
+    init() {
         try {
-            const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1');
-            this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
+            this.supabase = window.supabase.createClient(this.supabaseUrl, this.supabaseKey);
             console.log('✅ Supabase подключен');
         } catch (error) {
             console.error('❌ Ошибка подключения к Supabase:', error);
