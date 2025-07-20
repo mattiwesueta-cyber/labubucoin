@@ -16,14 +16,12 @@ export default async function handler(req, res) {
       .eq('tg_id', user_id)
       .single();
     if (error || !data) {
-      // Если пользователя нет — создаём его с балансом 0 и дополнительными полями
+      // Если пользователя нет — создаём его с балансом 0 и username
       const insertData = {
         tg_id: user_id,
-        balance: 0
+        balance: 0,
+        username: username || null
       };
-      if (username) insertData.username = username;
-      if (first_name) insertData.first_name = first_name;
-      if (last_name) insertData.last_name = last_name;
       const { error: insertError } = await supabase
         .from('players')
         .insert([insertData]);

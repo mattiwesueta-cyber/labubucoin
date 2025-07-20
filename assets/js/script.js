@@ -8,14 +8,19 @@ class LabubuGame {
         this.boostTimeLeft = 0;
         this.isBoostActive = false;
         this.userId = null; // сохраняем userId для обновления баланса
+        this.db = null; // GameDatabase instance
         this.init();
     }
 
-    init() {
-        this.loadGameData();
+    async init() {
+        // Инициализация GameDatabase
+        this.db = new window.GameDatabase();
+        // Ждем инициализации supabase
+        while (!this.db.supabase) {
+            await new Promise(r => setTimeout(r, 100));
+        }
         this.setupEventListeners();
         this.updateUI();
-
         // Получаем данные пользователя через Telegram WebApp API
         this.loadTelegramUser();
     }
@@ -36,8 +41,8 @@ class LabubuGame {
                 if (userElement) {
                     userElement.textContent = user.username ? `@${user.username}` : user.first_name;
                 }
-                // Загружаем баланс из backend/Supabase
-                await this.loadUserBalance(user.id);
+                // Загружаем все игровые данные из Supabase
+                await this.loadPlayerDataFromDB(user.id);
             } else {
                 if (retry < 5) {
                     setTimeout(() => this.loadTelegramUser(retry + 1), 400);
@@ -52,20 +57,21 @@ class LabubuGame {
         }
     }
 
-    async loadUserBalance(userId) {
-        try {
-            const balanceUrl = `https://labubucoin.vercel.app/api/balance?user_id=${userId}`;
-            const res = await fetch(balanceUrl);
-            const data = await res.json();
-            if (data && typeof data.balance !== 'undefined') {
-                this.coins = data.balance; // <-- обновляем баланс
-                const balanceElement = document.querySelector('.flex_balance span');
-                if (balanceElement) {
-                    balanceElement.textContent = this.formatNumber(this.coins);
-                }
+    async loadPlayerDataFromDB(userId) {
+        if (!this.db) return;
+        const data = await this.db.loadPlayerData(userId);
+        if (data) {
+            this.coins = data.coins || 0;
+            this.stableIncome = data.stable_income || 3.65;
+            this.profitPerClick = data.profit_per_click || 1;
+            this.boost = data.boost || 2;
+            this.boostTimeLeft = data.boost_time_left || 0;
+            this.isBoostActive = data.is_boost_active || false;
+            // Проверяем, не истек ли буст
+            if (this.isBoostActive && this.boostTimeLeft <= 0) {
+                this.isBoostActive = false;
             }
-        } catch (e) {
-            console.error(e);
+            this.updateUI();
         }
     }
 
@@ -195,6 +201,7 @@ class LabubuGame {
     }
 
     saveGameData() {
+        if (!this.userId || !this.db) return;
         const gameData = {
             coins: this.coins,
             stableIncome: this.stableIncome,
@@ -204,30 +211,11 @@ class LabubuGame {
             isBoostActive: this.isBoostActive,
             lastSave: Date.now()
         };
-        
-        localStorage.setItem('labubuGameData', JSON.stringify(gameData));
+        this.db.savePlayerData(this.userId, gameData);
     }
 
     loadGameData() {
-        const savedData = localStorage.getItem('labubuGameData');
-        if (savedData) {
-            try {
-                const data = JSON.parse(savedData);
-                this.coins = data.coins || 0;
-                this.stableIncome = data.stableIncome || 3.65;
-                this.profitPerClick = data.profitPerClick || 1;
-                this.boost = data.boost || 2;
-                this.boostTimeLeft = data.boostTimeLeft || 0;
-                this.isBoostActive = data.isBoostActive || false;
-                
-                // Проверяем, не истек ли буст
-                if (this.isBoostActive && this.boostTimeLeft <= 0) {
-                    this.isBoostActive = false;
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки данных игры:', error);
-            }
-        }
+        // Удаляем работу с localStorage, теперь все из БД
     }
 
     async updateBalanceInDB() {
