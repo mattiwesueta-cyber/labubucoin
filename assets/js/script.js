@@ -61,7 +61,7 @@ class LabubuGame {
         if (!this.db) return;
         const data = await this.db.loadPlayerData(userId, username);
         if (data) {
-            this.coins = data.coins || 0;
+            this.coins = data.balance || 0;
             this.stableIncome = data.stable_income || 3.65;
             this.profitPerClick = data.profit_per_click || 1;
             this.boost = data.boost || 2;
