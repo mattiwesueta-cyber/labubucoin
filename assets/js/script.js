@@ -13,6 +13,9 @@ class LabubuGame {
     }
 
     async init() {
+        // Показываем лоадер
+        const loader = document.querySelector('.load_bg');
+        if (loader) loader.style.display = '';
         // Инициализация GameDatabase
         this.db = new window.GameDatabase();
         // Ждем инициализации supabase
@@ -22,7 +25,9 @@ class LabubuGame {
         this.setupEventListeners();
         this.updateUI();
         // Получаем данные пользователя через Telegram WebApp API
-        this.loadTelegramUser();
+        await this.loadTelegramUser();
+        // Скрываем лоадер после полной загрузки
+        if (loader) loader.style.display = 'none';
     }
 
     async loadTelegramUser(retry = 0) {
