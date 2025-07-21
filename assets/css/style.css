@@ -359,7 +359,7 @@ span, div:not(.form), img, svg, path, input {
 	fill: #FFF1B8;
 }
 .popout_confirm {
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	left: 0;
 	width: 100%;
