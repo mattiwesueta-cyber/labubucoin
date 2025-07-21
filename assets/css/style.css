@@ -221,7 +221,7 @@ span, div:not(.form), img, svg, path, input {
 	transform: translateX(-50%);
     position: fixed !important;
 	bottom: 7.6401vw;
-	z-index: 9999 !important;
+	z-index: 999 !important;
 }
 .ctg_wrap {
 	width: 100%;
