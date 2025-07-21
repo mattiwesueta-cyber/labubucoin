@@ -315,7 +315,7 @@ span, div:not(.form), img, svg, path, input {
 	background: rgba(255, 177, 172, 0.15);
 	border-top: 0.17vw solid rgba(255, 255, 255, 0.15);
 	border-radius: 0 0 1.528vw 1.528vw;
-}
+} 
 .pr_wrapper span {
 	font-size: 2.3769vw;
 	font-family: 'Medium';
@@ -342,6 +342,33 @@ span, div:not(.form), img, svg, path, input {
 .overflow_up::-webkit-scrollbar {
 	display: none;
 }
+.selected_ctg {
+
+}
+.popout_confirm {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: auto;
+	padding: 6.2818vw;
+	border-radius: 5.433vw 5.433vw 0vw 0vw;
+	background: rgba(0, 0, 0, 0.35);
+	backdrop-filter: blur(4.677vw);
+}
+.conf_text {
+	font-size: 4.584vw;
+	font-family: 'SemiBold';
+	text-align: center;
+}
+.conf_color {
+	color: #FFD86E;
+}
+.descr_conf {
+	
+}
+
+
 
 
 
