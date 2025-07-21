@@ -74,6 +74,12 @@ class LabubuGame {
             this.boost = data.boost || 2;
             this.boostTimeLeft = data.boost_time_left || 0;
             this.isBoostActive = data.is_boost_active || false;
+            this.costume = data.costume || 'labubu.png';
+            // Применяем costume к картинке
+            const labubuImg = document.querySelector('.labubu_pic');
+            if (labubuImg) {
+                labubuImg.src = 'assets/images/' + this.costume;
+            }
             // Проверяем, не истек ли буст
             if (this.isBoostActive && this.boostTimeLeft <= 0) {
                 this.isBoostActive = false;
@@ -96,7 +102,8 @@ class LabubuGame {
                 this.selectedCard = {
                     id: card.dataset.id,
                     price: parseInt(card.dataset.price, 10),
-                    stableIncome: parseInt(card.dataset.stableIncome, 10)
+                    stableIncome: parseInt(card.dataset.stableIncome, 10),
+                    costume: card.dataset.costume || null
                 };
                 // Открываем окно подтверждения
                 document.getElementById('popout_confirm').style.display = 'flex';
@@ -132,6 +139,14 @@ class LabubuGame {
             // Списываем монеты и увеличиваем stable income
             this.coins = data.balance - this.selectedCard.price;
             this.stableIncome = (data.stable_income || 0) + this.selectedCard.stableIncome;
+            // Если карточка содержит поле costume, применяем его
+            if (this.selectedCard.costume) {
+                this.costume = this.selectedCard.costume;
+                const labubuImg = document.querySelector('.labubu_pic');
+                if (labubuImg) {
+                    labubuImg.src = 'assets/images/' + this.costume;
+                }
+            }
             // Сохраняем в БД
             await this.db.savePlayerData(this.userId, {
                 coins: this.coins,
@@ -139,7 +154,8 @@ class LabubuGame {
                 profitPerClick: this.profitPerClick,
                 boost: this.boost,
                 boostTimeLeft: this.boostTimeLeft,
-                isBoostActive: this.isBoostActive
+                isBoostActive: this.isBoostActive,
+                costume: this.costume || 'labubu.png'
             });
             this.updateUI();
             // Скрываем попап

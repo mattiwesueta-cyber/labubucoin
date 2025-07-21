@@ -221,7 +221,7 @@ span, div:not(.form), img, svg, path, input {
 	transform: translateX(-50%);
     position: fixed !important;
 	bottom: 7.6401vw;
-	z-index: 999 !important;
+	z-index: 99 !important;
 }
 .ctg_wrap {
 	width: 100%;
@@ -369,6 +369,7 @@ span, div:not(.form), img, svg, path, input {
 	border-radius: 5.433vw 5.433vw 0vw 0vw;
 	background: rgba(0, 0, 0, 0.35);
 	backdrop-filter: blur(4.677vw);
+	z-index: 100 !important;
 }
 .conf_text {
 	font-size: 4.584vw;

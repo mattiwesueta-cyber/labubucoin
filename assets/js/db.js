@@ -29,6 +29,7 @@ class GameDatabase {
                     boost: gameData.boost,
                     boost_time_left: gameData.boostTimeLeft,
                     is_boost_active: gameData.isBoostActive,
+                    costume: gameData.costume || null,
                     last_updated: new Date().toISOString()
                 }, { onConflict: 'tg_id' });
             if (error) throw error;
@@ -57,6 +58,7 @@ class GameDatabase {
                     boost: 2,
                     boost_time_left: 0,
                     is_boost_active: false,
+                    costume: 'labubu.png',
                     username: username || null,
                     last_updated: new Date().toISOString()
                 };
