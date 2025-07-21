@@ -137,7 +137,7 @@ span, div:not(.form), img, svg, path, input {
 	width: 79.2869vw;
 	height: 79.2869vw;
 }
-.labubu_wrapper_main_page {
+.main_page {
 	position: absolute;
 	bottom: 29.8421vw;
 }
@@ -342,8 +342,17 @@ span, div:not(.form), img, svg, path, input {
 .overflow_up::-webkit-scrollbar {
 	display: none;
 }
+.ctg_wrap {
+	border-radius: 9.338vw;
+}
 .selected_ctg {
-
+	background: radial-gradient(100% 100% at 50% 100.96%, #FFF1B8 0%, rgba(0, 0, 0, 0) 100%), rgba(255, 241, 184, 0.15);
+	border: 0.17vw solid #FFF1B8;
+	border-radius: 9.338vw;
+}
+.selected_ctg svg path {
+	fill-opacity: 1;
+	fill: #FFF1B8;
 }
 .popout_confirm {
 	position: absolute;
@@ -352,6 +361,7 @@ span, div:not(.form), img, svg, path, input {
 	width: 100%;
 	height: auto;
 	padding: 6.2818vw;
+	gap: 5.4329vw;
 	border-radius: 5.433vw 5.433vw 0vw 0vw;
 	background: rgba(0, 0, 0, 0.35);
 	backdrop-filter: blur(4.677vw);
@@ -360,13 +370,37 @@ span, div:not(.form), img, svg, path, input {
 	font-size: 4.584vw;
 	font-family: 'SemiBold';
 	text-align: center;
+	line-height: 93%;
 }
 .conf_color {
 	color: #FFD86E;
 }
 .descr_conf {
-	
+	font-size: 3.056vw;
+	font-family: 'Regular';
+	margin-top: 1.3582vw;
+	color: rgba(255, 255, 255, 0.5);
 }
+.popout_confirm  .upgrade_button {
+	height: 11.0357vw;
+}
+
+.main_page, .upgrade_page {
+	position: absolute;
+	left: 50%;
+	animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+	from {
+	  transform: translateY(25.396vw) translateX(-50%);
+	  opacity: 0;
+	}
+	to {
+	  transform: translateY(0) translateX(-50%);
+	  opacity: 1;
+	}
+  }
 
 
 

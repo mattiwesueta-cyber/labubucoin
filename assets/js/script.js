@@ -81,6 +81,27 @@ class LabubuGame {
         if (labubuCont) {
             labubuCont.addEventListener('click', () => this.handleClick());
         }
+
+        // Обработка клика по карточкам апгрейда
+        document.querySelectorAll('.box_lb').forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Сохраняем выбранную карточку
+                this.selectedCard = {
+                    id: card.dataset.id,
+                    price: parseInt(card.dataset.price, 10),
+                    stableIncome: parseInt(card.dataset.stableIncome, 10)
+                };
+                // Открываем окно подтверждения
+                document.getElementById('popout_confirm').style.display = 'flex';
+                // Можно обновить инфу в попапе, если нужно
+            });
+        });
+
+        // Кнопка покупки
+        const buyBtn = document.getElementById('buy_button');
+        if (buyBtn) {
+            buyBtn.addEventListener('click', () => this.handleBuyCard());
+        }
     }
 
     handleClick() {
@@ -93,6 +114,34 @@ class LabubuGame {
         this.updateBalanceInDB();
         this.spawnRandomProfitSpan(profit);
         this.animateCircleBg();
+    }
+
+    async handleBuyCard() {
+        if (!this.selectedCard || !this.userId || !this.db) return;
+        // Получаем данные пользователя
+        const data = await this.db.loadPlayerData(this.userId);
+        if (!data) return;
+        if (data.balance >= this.selectedCard.price) {
+            // Списываем монеты и увеличиваем stable income
+            this.coins = data.balance - this.selectedCard.price;
+            this.stableIncome = (data.stable_income || 0) + this.selectedCard.stableIncome;
+            // Сохраняем в БД
+            await this.db.savePlayerData(this.userId, {
+                coins: this.coins,
+                stableIncome: this.stableIncome,
+                profitPerClick: this.profitPerClick,
+                boost: this.boost,
+                boostTimeLeft: this.boostTimeLeft,
+                isBoostActive: this.isBoostActive
+            });
+            this.updateUI();
+            // Скрываем попап
+            document.getElementById('popout_confirm').style.display = 'none';
+            // Можно показать сообщение об успехе
+        } else {
+            // Недостаточно монет, показать ошибку
+            alert('Недостаточно монет для покупки!');
+        }
     }
 
     showProfitAnimation(profit) {
@@ -264,3 +313,19 @@ document.addEventListener('DOMContentLoaded', () => {
     window.labubuGame = new LabubuGame();
     console.log('🎮 LabubuCoin Game запущена!');
 }); 
+
+document.querySelectorAll('.ctg_wrap').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Скрыть все основные страницы
+      document.querySelectorAll('.main_page, .upgrade_page').forEach(page => {
+        page.style.display = 'none';
+      });
+      // Показать нужную
+      const target = this.dataset.target;
+      const page = document.querySelector('.' + target);
+      if (page) page.style.display = '';
+      // Подсветить активную иконку
+      document.querySelectorAll('.ctg_wrap').forEach(b => b.classList.remove('selected_ctg'));
+      this.classList.add('selected_ctg');
+    });
+  });
