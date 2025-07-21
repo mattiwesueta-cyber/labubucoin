@@ -211,6 +211,9 @@ span, div:not(.form), img, svg, path, input {
 	background: radial-gradient(45.98% 254.78% at 17.57% -162.63%, rgba(255, 241, 184, 0.25) 0%, rgba(255, 241, 184, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, radial-gradient(81.33% 642.94% at 121.49% 601.3%, #F2C6C2 0%, rgba(242, 198, 194, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, #352D2D;
 	border-radius: 94.228vw;
 }
+.load_bg {
+	z-index: 9999999;
+}
 .wrapper_dashboard {
 	display: flex;
 	width: 92.02vw;
