@@ -72,7 +72,7 @@ span, div:not(.form), img, svg, path, input {
 .main_info {
 	position: absolute;
 	left: 50%;
-	top: 38.8795vw;
+	top: 30.8795vw;
 	transform: translateX(-50%);
 }
 .pannel_i {
