@@ -390,6 +390,34 @@ span, div:not(.form), img, svg, path, input {
 	left: 50%;
 	animation: fadeInUp 0.6s ease-out forwards;
 }
+.bg_animation {
+	position: absolute;
+	width: 100%;
+	overflow: hidden;
+	height: 100%;
+	left: 0;
+	top: 0;
+	border-radius: 4.0747vw;
+}
+.bg_animation div {
+	width: 25.4669vw;
+	height: 25.4669vw;
+	background: white;
+	border-radius: 100% 100%;
+	position: absolute;
+	filter: blur(9.5076vw);
+	mix-blend-mode: overlay;
+
+	transition: 
+	  left 2s cubic-bezier(.4,0,.2,1),
+	  top 2s cubic-bezier(.4,0,.2,1),
+	  transform 2s cubic-bezier(.4,0,.2,1),
+	  opacity 2s cubic-bezier(.4,0,.2,1);
+	will-change: left, top, transform, opacity;
+}
+.header {
+	position: relative;
+}
 
 @keyframes fadeInUp {
 	from {

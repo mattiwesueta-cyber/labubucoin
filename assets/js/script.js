@@ -308,10 +308,42 @@ class LabubuGame {
     }
 }
 
+// === Анимация кружков на фоне ===
+function randomizeCircle(circle, areaW, areaH) {
+  const size = 120;
+  const left = Math.random() * (areaW - size);
+  const top = Math.random() * (areaH - size);
+  const scale = 0.7 + Math.random() * 0.7;
+  const opacity = 0.3 + Math.random() * 0.5;
+  circle.style.left = left + 'px';
+  circle.style.top = top + 'px';
+  circle.style.transform = `scale(${scale})`;
+  circle.style.opacity = opacity;
+}
+
+function animateCircles() {
+  const area = document.querySelector('.bg_animation');
+  if (!area) return;
+  const areaW = area.offsetWidth;
+  const areaH = area.offsetHeight;
+  const circles = [
+    document.querySelector('.circle_first'),
+    document.querySelector('.circle_second'),
+    document.querySelector('.circle_third'),
+    document.querySelector('.circle_four'),
+    document.querySelector('.circle_five')
+  ];
+  circles.forEach(circle => {
+    if (circle) randomizeCircle(circle, areaW, areaH);
+  });
+}
+
 // 🚀 Запуск игры
 document.addEventListener('DOMContentLoaded', () => {
     window.labubuGame = new LabubuGame();
     console.log('🎮 LabubuCoin Game запущена!');
+    setInterval(animateCircles, 2000);
+    animateCircles();
 }); 
 
 document.querySelectorAll('.ctg_wrap').forEach(btn => {
