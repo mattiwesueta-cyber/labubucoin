@@ -338,6 +338,8 @@ span, div:not(.form), img, svg, path, input {
 	flex-direction: row;
 	flex-wrap: wrap;
 	justify-content: space-between;
+	align-items: flex-start;
+	align-content: flex-start;
 	gap: 2.0374vw;
 	height: 79.966vw;
 	margin-top: 2.3769vw;
