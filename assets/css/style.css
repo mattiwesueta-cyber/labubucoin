@@ -397,6 +397,35 @@ span, div:not(.form), img, svg, path, input {
 	left: 50%;
 	animation: fadeInUp 0.6s ease-out forwards;
 }
+
+.popout_confirm {
+	animation: fadeInPop 0.6s ease-out forwards;
+}
+.hidepopout {
+	animation: fadeInDown 0.6s ease-out forwards;
+}
+@keyframes fadeInDown {
+	from {
+	  transform: translateY(0);
+	  opacity: 1;
+	}
+	to {
+	  transform: translateY(100%);
+	  opacity: 0;
+	}
+  }
+  
+
+  @keyframes fadeInPop {
+	from {
+	  transform: translateY(100%);
+	  opacity: 0;
+	}
+	to {
+	  transform: translateY(0%);
+	  opacity: 1;
+	}
+  }
 .bg_animation {
 	position: absolute;
 	width: 100%;

@@ -114,7 +114,17 @@ class LabubuGame {
         // Кнопка покупки
         const buyBtn = document.getElementById('buy_button');
         if (buyBtn) {
-            buyBtn.addEventListener('click', () => this.handleBuyCard());
+            buyBtn.addEventListener('click', () => {
+                this.handleBuyCard();
+                const popout = document.getElementById('popout_confirm');
+                if (popout) {
+                    popout.classList.add('hidepopout');
+                    setTimeout(() => {
+                        popout.style.display = 'none';
+                        popout.classList.remove('hidepopout');
+                    }, 1000);
+                }
+            });
         }
     }
 
