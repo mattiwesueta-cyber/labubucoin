@@ -9,7 +9,23 @@ class LabubuGame {
         this.isBoostActive = false;
         this.userId = null; // сохраняем userId для обновления баланса
         this.db = null; // GameDatabase instance
+        this.costume = 'labubu.png';
+        this.accessories = {};
         this.init();
+    }
+
+    getPlayerDataForSave() {
+        return {
+            coins: this.coins,
+            stableIncome: this.stableIncome,
+            profitPerClick: this.profitPerClick,
+            boost: this.boost,
+            boostTimeLeft: this.boostTimeLeft,
+            isBoostActive: this.isBoostActive,
+            costume: this.costume,
+            accessories: this.accessories,
+            last_active: new Date().toISOString()
+        };
     }
 
     async init() {
@@ -85,6 +101,7 @@ class LabubuGame {
             this.boostTimeLeft = data.boost_time_left || 0;
             this.isBoostActive = data.is_boost_active || false;
             this.costume = data.costume || 'labubu.png';
+            this.accessories = data.accessories || {};
             // Применяем costume к картинке
             const labubuImg = document.querySelector('.labubu_pic');
             if (labubuImg) {
@@ -150,12 +167,8 @@ class LabubuGame {
                                 popoutEarn.classList.remove('hidepopout');
                                 this.coins += earned;
                                 this.updateUI();
-                                // Сохраняем новый баланс и last_active только после получения дохода
-                                await this.db.savePlayerData(this.userId, {
-                                    ...data,
-                                    coins: this.coins,
-                                    last_active: new Date().toISOString() // обязательно последним!
-                                });
+                                // Сохраняем все данные игрока
+                                await this.db.savePlayerData(this.userId, this.getPlayerDataForSave());
                             }, 1000);
                         };
                     }
@@ -330,16 +343,7 @@ class LabubuGame {
                 }
             }
             // Сохраняем в БД с costume
-            await this.db.savePlayerData(this.userId, {
-                ...data,
-                coins: this.coins,
-                stableIncome: this.stableIncome,
-                profitPerClick: this.profitPerClick,
-                boost: this.boost,
-                boostTimeLeft: this.boostTimeLeft,
-                isBoostActive: this.isBoostActive,
-                costume: this.costume // <-- обязательно сохраняем costume
-            });
+            await this.db.savePlayerData(this.userId, this.getPlayerDataForSave());
             this.updateUI();
             // Скрываем попап
             document.getElementById('popout_confirm').style.display = 'none';
@@ -387,11 +391,7 @@ class LabubuGame {
             accessories[category] = this.selectedAccessory.image;
             // Сохраняем в БД только если accessories — объект
             if (accessories && typeof accessories === 'object') {
-                await this.db.savePlayerData(this.userId, {
-                    ...data,
-                    coins: newBalance,
-                    accessories
-                });
+                await this.db.savePlayerData(this.userId, this.getPlayerDataForSave());
             }
             this.coins = newBalance;
             this.updateUI();
@@ -792,7 +792,22 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(animateCircles, 2000);
     animateCircles();
     // renderAccessories(); // убрано, если функции нет
-}); 
+
+    // Обновление last_active каждую минуту
+    setInterval(() => {
+        if (window.labubuGame && window.labubuGame.userId && window.labubuGame.db) {
+            window.labubuGame.db.savePlayerData(window.labubuGame.userId, window.labubuGame.getPlayerDataForSave());
+            // console.log('last_active updated!');
+        }
+    }, 60 * 1000);
+});
+
+// Надёжное сохранение last_active при выходе
+window.addEventListener('beforeunload', (e) => {
+    if (window.labubuGame && window.labubuGame.userId && window.labubuGame.db) {
+        window.labubuGame.db.savePlayerData(window.labubuGame.userId, window.labubuGame.getPlayerDataForSave());
+    }
+});
 
 document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {
     btn.addEventListener('click', function() {
