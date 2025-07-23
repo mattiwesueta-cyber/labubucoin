@@ -122,12 +122,20 @@ class LabubuGame {
             // Парсим accessories, если это строка
             if (data.accessories && typeof data.accessories === 'string') {
                 try {
+                    console.log('Parsing accessories string:', data.accessories);
                     data.accessories = JSON.parse(data.accessories);
                 } catch (e) {
+                    console.error('Error parsing accessories:', e);
                     data.accessories = {};
                 }
             }
-            
+
+            // Проверяем, что accessories это объект
+            if (!data.accessories || typeof data.accessories !== 'object') {
+                console.log('Initializing empty accessories object');
+                data.accessories = {};
+            }
+
             this.coins = data.balance || 0;
             this.stableIncome = Math.min(data.stable_income || 3.65, maxStableIncome);
             this.profitPerClick = data.profit_per_click || 1;
@@ -135,166 +143,55 @@ class LabubuGame {
             this.boostTimeLeft = data.boost_time_left || 0;
             this.isBoostActive = data.is_boost_active || false;
             this.costume = data.costume || 'labubu.png';
-            this.accessories = data.accessories || {};
+            this.accessories = data.accessories;
+
+            console.log('Loaded accessories:', this.accessories);
 
             // Применяем costume к картинке
             const labubuImg = document.querySelector('.labubu_pic');
             if (labubuImg) {
                 labubuImg.src = 'assets/images/' + this.costume;
             }
-            // Подгружаем аксессуары, если есть
-            if (data.accessories) {
-                const hatImg = document.getElementById('hat');
-                const shoesImg = document.getElementById('shoes');
-                const bagImg = document.getElementById('bag');
-                if (hatImg) {
-                    if (data.accessories.hat) {
-                        hatImg.src = data.accessories.hat;
-                        hatImg.style.display = '';
-                    } else {
-                        hatImg.style.display = 'none';
-                    }
-                }
-                if (shoesImg) {
-                    if (data.accessories.shoes) {
-                        shoesImg.src = data.accessories.shoes;
-                        shoesImg.style.display = '';
-                    } else {
-                        shoesImg.style.display = 'none';
-                    }
-                }
-                if (bagImg) {
-                    if (data.accessories.bag) {
-                        bagImg.src = data.accessories.bag;
-                        bagImg.style.display = '';
-                    } else {
-                        bagImg.style.display = 'none';
-                    }
-                }
-            }
-            // Проверяем, не истек ли буст
-            if (this.isBoostActive && this.boostTimeLeft <= 0) {
-                this.isBoostActive = false;
-            }
-            // === Оффлайн доход ===
-            try {
-                // Получаем серверное время
-                const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
-                const timeData = await timeResponse.json();
-                
-                // Проверяем, есть ли last_active в данных
-                if (!data.last_active) {
-                    console.log('No last_active time found, setting current server time');
-                    // Добавляем Z в конец для явного указания UTC
-                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                    await this.db.savePlayerData(this.userId, {
-                        ...data,
-                        last_active: utcTime
-                    });
-                    return; // Выходим, так как это первый вход
-                }
 
-                // Убеждаемся, что last_active в UTC формате
-                const lastActiveStr = data.last_active.endsWith('Z') ? data.last_active : data.last_active + 'Z';
-                
-                // Преобразуем оба времени в UTC миллисекунды
-                const serverDate = new Date(timeData.serverTime);
-                const lastActiveDate = new Date(lastActiveStr);
-                
-                // Получаем timestamp'ы в UTC
-                const now = serverDate.getTime(); // serverTime уже в UTC
-                const lastActive = lastActiveDate.getTime(); // теперь lastActive тоже в UTC
-                
-                // Отладочная информация
-                console.log('Time debug:', {
-                    serverTime: timeData.serverTime,
-                    lastActive: lastActiveStr,
-                    diffMs: now - lastActive,
-                    diffMinutes: (now - lastActive) / (60 * 1000)
-                });
+            // Подгружаем аксессуары
+            const hatImg = document.getElementById('hat');
+            const shoesImg = document.getElementById('shoes');
+            const bagImg = document.getElementById('bag');
 
-                let diffMs = now - lastActive;
-                
-                // Проверка на отрицательную разницу во времени
-                if (diffMs < 0) {
-                    console.error('Negative time difference detected:', diffMs);
-                    return; // Выходим, чтобы предотвратить неправильное начисление
-                }
+            console.log('Accessory elements:', { hatImg, shoesImg, bagImg });
 
-                // Проверка на слишком большую разницу во времени (больше суток)
-                if (diffMs > 24 * 60 * 60 * 1000) {
-                    console.warn('Time difference more than 24 hours, limiting to 24 hours');
-                    diffMs = 24 * 60 * 60 * 1000;
-                }
-                
-                let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
-                let earnMs = Math.min(diffMs, maxMs);
-
-                console.log('Time calculation:', {
-                    diffMs,
-                    maxMs,
-                    earnMs,
-                    diffMinutes: Math.floor(diffMs / (60 * 1000)), // округляем минуты вниз
-                    earnMinutes: Math.floor(earnMs / (60 * 1000))  // округляем минуты вниз
-                });
-
-                if (earnMs > 60 * 1000) { // если больше 1 минуты
-                    let minutes = Math.floor(earnMs / (60 * 1000)); // округляем минуты вниз
-                    
-                    // Проверка и ограничение stableIncome
-                    const maxStableIncome = 100; // максимальный доход в минуту
-                    const actualStableIncome = Math.min(this.stableIncome, maxStableIncome);
-                    
-                    let earned = actualStableIncome * minutes;
-                    
-                    console.log('Reward calculation:', {
-                        minutes,
-                        originalStableIncome: this.stableIncome,
-                        actualStableIncome,
-                        earned,
-                        minutesRaw: earnMs / (60 * 1000)
-                    });
-
-                    // Показываем попап
-                    const popoutEarn = document.querySelector('.popout_earn');
-                    if (popoutEarn) {
-                        popoutEarn.style.display = 'flex';
-                        const earnCoinsSpan = document.getElementById('earn_coins');
-                        if (earnCoinsSpan) earnCoinsSpan.textContent = this.formatNumber(earned);
-                        const pickupBtn = document.getElementById('pickup_coins');
-                        if (pickupBtn) {
-                            pickupBtn.onclick = async () => {
-                                // Анимация скрытия попапа
-                                popoutEarn.classList.add('hidepopout');
-                                setTimeout(async () => {
-                                    popoutEarn.style.display = 'none';
-                                    popoutEarn.classList.remove('hidepopout');
-                                    this.coins += earned;
-                                    this.updateUI();
-                                    // Сохраняем все данные игрока с новым временем
-                                    // Убеждаемся, что сохраняем время в UTC
-                                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                                    await this.db.savePlayerData(this.userId, {
-                                        ...this.getPlayerDataForSave(),
-                                        last_active: utcTime
-                                    });
-                                }, 1000);
-                            };
-                        }
-                    }
+            // Обработка шапки
+            if (hatImg) {
+                if (this.accessories.hat) {
+                    console.log('Setting hat:', this.accessories.hat);
+                    hatImg.src = this.accessories.hat;
+                    hatImg.style.display = '';
                 } else {
-                    // Просто обновляем last_active (если доход не начислялся)
-                    // Убеждаемся, что сохраняем время в UTC
-                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                    await this.db.savePlayerData(this.userId, {
-                        ...data,
-                        last_active: utcTime
-                    });
+                    hatImg.style.display = 'none';
                 }
-            } catch (error) {
-                console.error('Error in offline income calculation:', error);
             }
-            this.updateUI();
+
+            // Обработка обуви
+            if (shoesImg) {
+                if (this.accessories.shoes) {
+                    console.log('Setting shoes:', this.accessories.shoes);
+                    shoesImg.src = this.accessories.shoes;
+                    shoesImg.style.display = '';
+                } else {
+                    shoesImg.style.display = 'none';
+                }
+            }
+
+            // Обработка сумки
+            if (bagImg) {
+                if (this.accessories.bag) {
+                    console.log('Setting bag:', this.accessories.bag);
+                    bagImg.src = this.accessories.bag;
+                    bagImg.style.display = '';
+                } else {
+                    bagImg.style.display = 'none';
+                }
+            }
         }
     }
 
@@ -471,66 +368,65 @@ class LabubuGame {
     // Покупка аксессуара
     async handleBuyAccessory() {
         if (!this.selectedAccessory || !this.userId || !this.db) return;
+        
+        console.log('Buying accessory:', this.selectedAccessory);
+        
         // Получаем данные пользователя
         const data = await this.db.loadPlayerData(this.userId);
         if (!data) return;
+
         if (data.balance >= this.selectedAccessory.price) {
             // Списываем монеты
             const newBalance = data.balance - this.selectedAccessory.price;
+            
             // Усиленная защита accessories
             let accessories = data.accessories;
             if (!accessories || typeof accessories !== 'object') {
                 if (typeof accessories === 'string') {
                     try {
                         accessories = JSON.parse(accessories);
-                        // Если после парсинга не объект — сбрасываем
-                        if (!accessories || typeof accessories !== 'object') accessories = {};
+                        if (!accessories || typeof accessories !== 'object') {
+                            accessories = {};
+                        }
                     } catch (e) {
-                        // Если парсинг не удался, НЕ затираем аксессуары, а оставляем как было
+                        console.error('Error parsing existing accessories:', e);
                         accessories = {};
                     }
                 } else {
                     accessories = {};
                 }
             }
-            // Получаем категорию из .row_lb span:last-child выбранной карточки
-            const selectedCardElem = document.querySelector(`.box_lb[data-id='${this.selectedAccessory.id}']`);
-            let category = this.selectedAccessory.category;
-            if (selectedCardElem) {
-                const lastSpan = selectedCardElem.querySelector('.row_lb span:last-child');
-                if (lastSpan) {
-                    category = lastSpan.textContent.trim().toLowerCase();
-                }
-            }
+
+            // Получаем категорию
+            const category = this.selectedAccessory.category.toLowerCase();
+            console.log('Accessory category:', category);
+
+            // Сохраняем путь к изображению
             accessories[category] = this.selectedAccessory.image;
-            this.accessories = accessories; // обязательно обновляем актуальные аксессуары
-            // Сохраняем в БД только если accessories — объект
-            if (accessories && typeof accessories === 'object') {
-                await this.db.savePlayerData(this.userId, this.getPlayerDataForSave());
-            }
+            this.accessories = accessories;
+
+            console.log('Updated accessories:', this.accessories);
+
+            // Сохраняем в БД
+            const saveData = {
+                ...this.getPlayerDataForSave(),
+                balance: newBalance,
+                accessories: this.accessories
+            };
+
+            console.log('Saving data:', saveData);
+
+            await this.db.savePlayerData(this.userId, saveData);
             this.coins = newBalance;
             this.updateUI();
-            // Отобразить аксессуар на главном персонаже сразу после покупки
-            if (category === 'hat') {
-                const hatImg = document.getElementById('hat');
-                if (hatImg) {
-                    hatImg.src = this.selectedAccessory.image;
-                    hatImg.style.display = '';
-                }
-            } else if (category === 'shoes') {
-                const shoesImg = document.getElementById('shoes');
-                if (shoesImg) {
-                    shoesImg.src = this.selectedAccessory.image;
-                    shoesImg.style.display = '';
-                }
-            } else if (category === 'bag') {
-                const bagImg = document.getElementById('bag');
-                if (bagImg) {
-                    bagImg.src = this.selectedAccessory.image;
-                    bagImg.style.display = '';
-                }
+
+            // Отображаем аксессуар на персонаже
+            const accessoryImg = document.getElementById(category);
+            if (accessoryImg) {
+                console.log('Updating accessory display:', category, this.selectedAccessory.image);
+                accessoryImg.src = this.selectedAccessory.image;
+                accessoryImg.style.display = '';
             }
-            // Можно показать сообщение об успехе
         } else {
             alert('Недостаточно монет для покупки!');
         }
