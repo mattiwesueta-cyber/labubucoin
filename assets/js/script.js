@@ -16,7 +16,7 @@ class LabubuGame {
         this.onlineIncomeInterval = null; // интервал для начисления онлайн дохода
         this.lastOnlineIncomeSave = Date.now(); // время последнего сохранения онлайн дохода
 
-        this.db = new LabubuDB();
+        this.db = null; // Инициализируем в init() после загрузки DOM
         this.init();
     }
 
@@ -42,12 +42,12 @@ class LabubuGame {
         // Показываем лоадер
         const loader = document.querySelector('.load_bg');
         if (loader) loader.style.display = '';
-        // Инициализация GameDatabase
-        this.db = new window.GameDatabase();
-        // Ждем инициализации supabase
-        while (!this.db.supabase) {
+        
+        // Ждем инициализации supabase (база данных уже создана в конструкторе)
+        while (!window.GameDatabase) { // Исправляем на window.GameDatabase
             await new Promise(r => setTimeout(r, 100));
         }
+        this.db = new window.GameDatabase(); // Инициализируем db
         this.setupEventListeners();
         this.updateUI();
         // Получаем данные пользователя через Telegram WebApp API
