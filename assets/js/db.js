@@ -19,11 +19,18 @@ class GameDatabase {
     async savePlayerData(userId, gameData) {
         if (!this.supabase) return false;
         try {
+            console.log('Saving player data:', {
+                userId,
+                balance: gameData.coins, // Убираем Math.floor для точного сохранения баланса
+                stableIncome: Math.floor(gameData.stableIncome),
+                accessories: gameData.accessories
+            });
+            
             const { error, data: upsertData } = await this.supabase
                 .from('players')
                 .upsert({
                     tg_id: userId.toString(),
-                    balance: Math.floor(gameData.coins),
+                    balance: gameData.coins, // Убираем Math.floor для точного сохранения баланса
                     stable_income: Math.floor(gameData.stableIncome),
                     profit_per_click: Math.floor(gameData.profitPerClick),
                     boost: Math.floor(gameData.boost),
@@ -34,7 +41,7 @@ class GameDatabase {
                     last_active: gameData.last_active || new Date().toISOString(),
                     last_updated: new Date().toISOString()
                 }, { onConflict: 'tg_id' });
-            console.log('savePlayerData upsert:', { error, upsertData, last_active: gameData.last_active });
+            console.log('savePlayerData result:', { error, success: !error });
             if (error) throw error;
             return true;
         } catch (error) {

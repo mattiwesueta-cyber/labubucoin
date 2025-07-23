@@ -90,6 +90,8 @@ class LabubuGame {
         if (!this.db) return;
         const data = await this.db.loadPlayerData(userId, username);
         if (data) {
+            console.log('Loaded player data from DB:', data);
+            
             // Проверка и исправление некорректных значений
             const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
             const timeData = await timeResponse.json();
@@ -118,9 +120,7 @@ class LabubuGame {
                     stable_income: data.stable_income
                 });
                 await this.db.savePlayerData(userId, data);
-                // Перезагружаем страницу для применения изменений
-                window.location.reload();
-                return;
+                // НЕ перезагружаем страницу, а продолжаем с исправленными данными
             }
 
             // Парсим accessories, если это строка
@@ -132,6 +132,7 @@ class LabubuGame {
                 }
             }
             
+            // ВАЖНО: Устанавливаем баланс ВСЕГДА, независимо от других проверок
             this.coins = data.balance || 0;
             this.stableIncome = Math.min(data.stable_income || 3.65, maxStableIncome);
             this.profitPerClick = data.profit_per_click || 1;
@@ -140,6 +141,8 @@ class LabubuGame {
             this.isBoostActive = data.is_boost_active || false;
             this.costume = data.costume || 'labubu.png';
             this.accessories = data.accessories || {};
+
+            console.log('Set local balance to:', this.coins);
 
             // Применяем costume к картинке
             const labubuImg = document.querySelector('.labubu_pic');
@@ -164,6 +167,7 @@ class LabubuGame {
                     if (data.accessories.hat) {
                         console.log('Setting hat:', data.accessories.hat);
                         hatImg.src = data.accessories.hat;
+                        hatImg.style.display = 'block';
                         hatImg.onerror = () => console.error('Failed to load hat image:', data.accessories.hat);
                         hatImg.onload = () => console.log('Hat image loaded successfully');
                     } else {
@@ -176,6 +180,7 @@ class LabubuGame {
                     if (data.accessories.shoes) {
                         console.log('Setting shoes:', data.accessories.shoes);
                         shoesImg.src = data.accessories.shoes;
+                        shoesImg.style.display = 'block';
                         shoesImg.onerror = () => console.error('Failed to load shoes image:', data.accessories.shoes);
                         shoesImg.onload = () => console.log('Shoes image loaded successfully');
                     } else {
@@ -188,6 +193,7 @@ class LabubuGame {
                     if (data.accessories.bag) {
                         console.log('Setting bag:', data.accessories.bag);
                         bagImg.src = data.accessories.bag;
+                        bagImg.style.display = 'block';
                         bagImg.onerror = () => console.error('Failed to load bag image:', data.accessories.bag);
                         bagImg.onload = () => console.log('Bag image loaded successfully');
                     } else {
@@ -209,125 +215,132 @@ class LabubuGame {
             if (this.isBoostActive && this.boostTimeLeft <= 0) {
                 this.isBoostActive = false;
             }
+            
             // === Оффлайн доход ===
-            try {
-                // Получаем серверное время
-                const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
-                const timeData = await timeResponse.json();
-                
-                // Проверяем, есть ли last_active в данных
-                if (!data.last_active) {
-                    console.log('No last_active time found, setting current server time');
-                    // Добавляем Z в конец для явного указания UTC
-                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                    await this.db.savePlayerData(this.userId, {
-                        ...data,
-                        last_active: utcTime
-                    });
-                    return; // Выходим, так как это первый вход
-                }
-
-                // Убеждаемся, что last_active в UTC формате
-                const lastActiveStr = data.last_active.endsWith('Z') ? data.last_active : data.last_active + 'Z';
-                
-                // Преобразуем оба времени в UTC миллисекунды
-                const serverDate = new Date(timeData.serverTime);
-                const lastActiveDate = new Date(lastActiveStr);
-                
-                // Получаем timestamp'ы в UTC
-                const now = serverDate.getTime(); // serverTime уже в UTC
-                const lastActive = lastActiveDate.getTime(); // теперь lastActive тоже в UTC
-                
-                // Отладочная информация
-                console.log('Time debug:', {
-                    serverTime: timeData.serverTime,
-                    lastActive: lastActiveStr,
-                    diffMs: now - lastActive,
-                    diffMinutes: (now - lastActive) / (60 * 1000)
+            // Проверяем, нужно ли начислить оффлайн доход
+            const shouldProcessOfflineIncome = data.last_active && new Date(data.last_active).getTime() < now;
+            
+            if (shouldProcessOfflineIncome) {
+                await this.processOfflineIncome(data, timeData);
+            } else {
+                // Если это первый вход или другие случаи, просто обновляем last_active
+                console.log('First login or no offline income needed, updating last_active');
+                const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
+                await this.db.savePlayerData(this.userId, {
+                    ...this.getPlayerDataForSave(),
+                    last_active: utcTime
                 });
-
-                let diffMs = now - lastActive;
-                
-                // Проверка на отрицательную разницу во времени
-                if (diffMs < 0) {
-                    console.error('Negative time difference detected:', diffMs);
-                    return; // Выходим, чтобы предотвратить неправильное начисление
-                }
-
-                // Проверка на слишком большую разницу во времени (больше суток)
-                if (diffMs > 24 * 60 * 60 * 1000) {
-                    console.warn('Time difference more than 24 hours, limiting to 24 hours');
-                    diffMs = 24 * 60 * 60 * 1000;
-                }
-                
-                let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
-                let earnMs = Math.min(diffMs, maxMs);
-
-                console.log('Time calculation:', {
-                    diffMs,
-                    maxMs,
-                    earnMs,
-                    diffMinutes: Math.floor(diffMs / (60 * 1000)), // округляем минуты вниз
-                    earnMinutes: Math.floor(earnMs / (60 * 1000))  // округляем минуты вниз
-                });
-
-                if (earnMs > 60 * 1000) { // если больше 1 минуты
-                    let minutes = Math.floor(earnMs / (60 * 1000)); // округляем минуты вниз
-                    
-                    // Проверка и ограничение stableIncome
-                    const maxStableIncome = 100; // максимальный доход в минуту
-                    const actualStableIncome = Math.min(this.stableIncome, maxStableIncome);
-                    
-                    let earned = actualStableIncome * minutes;
-                    
-                    console.log('Reward calculation:', {
-                        minutes,
-                        originalStableIncome: this.stableIncome,
-                        actualStableIncome,
-                        earned,
-                        minutesRaw: earnMs / (60 * 1000)
-                    });
-
-                    // Показываем попап
-                    const popoutEarn = document.querySelector('.popout_earn');
-                    if (popoutEarn) {
-                        popoutEarn.style.display = 'flex';
-                        const earnCoinsSpan = document.getElementById('earn_coins');
-                        if (earnCoinsSpan) earnCoinsSpan.textContent = this.formatNumber(earned);
-                        const pickupBtn = document.getElementById('pickup_coins');
-                        if (pickupBtn) {
-                            pickupBtn.onclick = async () => {
-                                // Анимация скрытия попапа
-                                popoutEarn.classList.add('hidepopout');
-                                setTimeout(async () => {
-                                    popoutEarn.style.display = 'none';
-                                    popoutEarn.classList.remove('hidepopout');
-                                    this.coins += earned;
-                                    this.updateUI();
-                                    // Сохраняем все данные игрока с новым временем
-                                    // Убеждаемся, что сохраняем время в UTC
-                                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                                    await this.db.savePlayerData(this.userId, {
-                                        ...this.getPlayerDataForSave(),
-                                        last_active: utcTime
-                                    });
-                                }, 1000);
-                            };
-                        }
-                    }
-                } else {
-                    // Просто обновляем last_active (если доход не начислялся)
-                    // Убеждаемся, что сохраняем время в UTC
-                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                    await this.db.savePlayerData(this.userId, {
-                        ...data,
-                        last_active: utcTime
-                    });
-                }
-            } catch (error) {
-                console.error('Error in offline income calculation:', error);
             }
+            
+            // ВСЕГДА обновляем UI в конце
             this.updateUI();
+        }
+    }
+    
+    // Выносим логику оффлайн дохода в отдельную функцию
+    async processOfflineIncome(data, timeData) {
+        try {
+            // Убеждаемся, что last_active в UTC формате
+            const lastActiveStr = data.last_active.endsWith('Z') ? data.last_active : data.last_active + 'Z';
+            
+            // Преобразуем оба времени в UTC миллисекунды
+            const serverDate = new Date(timeData.serverTime);
+            const lastActiveDate = new Date(lastActiveStr);
+            
+            // Получаем timestamp'ы в UTC
+            const now = serverDate.getTime(); // serverTime уже в UTC
+            const lastActive = lastActiveDate.getTime(); // теперь lastActive тоже в UTC
+            
+            // Отладочная информация
+            console.log('Offline income time debug:', {
+                serverTime: timeData.serverTime,
+                lastActive: lastActiveStr,
+                diffMs: now - lastActive,
+                diffMinutes: (now - lastActive) / (60 * 1000)
+            });
+
+            let diffMs = now - lastActive;
+            
+            // Проверка на отрицательную разницу во времени
+            if (diffMs < 0) {
+                console.error('Negative time difference detected:', diffMs);
+                return; // Выходим, чтобы предотвратить неправильное начисление
+            }
+
+            // Проверка на слишком большую разницу во времени (больше суток)
+            if (diffMs > 24 * 60 * 60 * 1000) {
+                console.warn('Time difference more than 24 hours, limiting to 24 hours');
+                diffMs = 24 * 60 * 60 * 1000;
+            }
+            
+            let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
+            let earnMs = Math.min(diffMs, maxMs);
+
+            console.log('Offline income calculation:', {
+                diffMs,
+                maxMs,
+                earnMs,
+                diffMinutes: Math.floor(diffMs / (60 * 1000)), // округляем минуты вниз
+                earnMinutes: Math.floor(earnMs / (60 * 1000))  // округляем минуты вниз
+            });
+
+            if (earnMs > 60 * 1000) { // если больше 1 минуты
+                let minutes = Math.floor(earnMs / (60 * 1000)); // округляем минуты вниз
+                
+                // Проверка и ограничение stableIncome
+                const maxStableIncome = 100; // максимальный доход в минуту
+                const actualStableIncome = Math.min(this.stableIncome, maxStableIncome);
+                
+                let earned = actualStableIncome * minutes;
+                
+                console.log('Offline reward calculation:', {
+                    minutes,
+                    originalStableIncome: this.stableIncome,
+                    actualStableIncome,
+                    earned,
+                    minutesRaw: earnMs / (60 * 1000),
+                    currentBalance: this.coins
+                });
+
+                // Показываем попап
+                const popoutEarn = document.querySelector('.popout_earn');
+                if (popoutEarn) {
+                    popoutEarn.style.display = 'flex';
+                    const earnCoinsSpan = document.getElementById('earn_coins');
+                    if (earnCoinsSpan) earnCoinsSpan.textContent = this.formatNumber(earned);
+                    const pickupBtn = document.getElementById('pickup_coins');
+                    if (pickupBtn) {
+                        pickupBtn.onclick = async () => {
+                            // Анимация скрытия попапа
+                            popoutEarn.classList.add('hidepopout');
+                            setTimeout(async () => {
+                                popoutEarn.style.display = 'none';
+                                popoutEarn.classList.remove('hidepopout');
+                                this.coins += earned;
+                                console.log('Added offline income:', earned, 'New balance:', this.coins);
+                                this.updateUI();
+                                // Сохраняем все данные игрока с новым временем
+                                // Убеждаемся, что сохраняем время в UTC
+                                const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
+                                await this.db.savePlayerData(this.userId, {
+                                    ...this.getPlayerDataForSave(),
+                                    last_active: utcTime
+                                });
+                            }, 1000);
+                        };
+                    }
+                }
+            } else {
+                // Просто обновляем last_active (если доход не начислялся)
+                // Убеждаемся, что сохраняем время в UTC
+                const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
+                await this.db.savePlayerData(this.userId, {
+                    ...this.getPlayerDataForSave(),
+                    last_active: utcTime
+                });
+            }
+        } catch (error) {
+            console.error('Error in offline income calculation:', error);
         }
     }
 
@@ -980,6 +993,53 @@ class LabubuGame {
             });
         }
     }
+    
+    // Функция для отладки баланса
+    async debugBalance() {
+        console.log('=== BALANCE DEBUG ===');
+        console.log('Current local balance (this.coins):', this.coins);
+        console.log('UserId:', this.userId);
+        
+        // Проверяем данные в БД
+        if (this.userId && this.db) {
+            const data = await this.db.loadPlayerData(this.userId);
+            console.log('DB balance data:', data ? data.balance : 'NO DATA');
+            console.log('Full DB data:', data);
+            
+            if (data && data.balance !== this.coins) {
+                console.warn('⚠️ BALANCE MISMATCH!');
+                console.warn('Local coins:', this.coins);
+                console.warn('DB balance:', data.balance);
+            }
+        }
+        
+        // Проверяем элемент UI
+        const balanceElement = document.querySelector('.flex_balance span');
+        if (balanceElement) {
+            console.log('UI shows:', balanceElement.textContent);
+        }
+        
+        console.log('=== END BALANCE DEBUG ===');
+    }
+    
+    // Функция для принудительной синхронизации баланса с БД
+    async forceSyncBalance() {
+        console.log('Force syncing balance with DB...');
+        if (this.userId && this.db) {
+            const data = await this.db.loadPlayerData(this.userId);
+            if (data) {
+                console.log('DB balance:', data.balance);
+                this.coins = data.balance || 0;
+                console.log('Set local balance to:', this.coins);
+                this.updateUI();
+                console.log('Balance synced successfully');
+            } else {
+                console.error('No data found in DB');
+            }
+        } else {
+            console.error('UserId or DB not available');
+        }
+    }
 }
 
 
@@ -1024,10 +1084,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Добавляем функции отладки в глобальную область видимости
     window.debugAccessories = () => window.labubuGame.debugAccessories();
     window.forceRefreshAccessories = () => window.labubuGame.forceRefreshAccessories();
+    window.debugBalance = () => window.labubuGame.debugBalance();
+    window.forceSyncBalance = () => window.labubuGame.forceSyncBalance();
     
     console.log('🔧 Debug functions available:');
     console.log('- debugAccessories() - показать отладочную информацию об аксессуарах');
     console.log('- forceRefreshAccessories() - принудительно обновить отображение аксессуаров');
+    console.log('- debugBalance() - показать отладочную информацию о балансе');
+    console.log('- forceSyncBalance() - принудительно синхронизировать баланс с БД');
 
     // Обновление last_active каждую минуту
     setInterval(async () => {
