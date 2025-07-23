@@ -316,13 +316,19 @@ class LabubuGame {
         if (data.balance >= this.selectedAccessory.price) {
             // Списываем монеты
             const newBalance = data.balance - this.selectedAccessory.price;
-            // Обновляем аксессуары
-            let accessories = data.accessories || {};
-            // Если accessories строка — парсим
-            if (typeof accessories === 'string') {
-                try {
-                    accessories = JSON.parse(accessories);
-                } catch (e) {
+            // Усиленная защита accessories
+            let accessories = data.accessories;
+            if (!accessories || typeof accessories !== 'object') {
+                if (typeof accessories === 'string') {
+                    try {
+                        accessories = JSON.parse(accessories);
+                        // Если после парсинга не объект — сбрасываем
+                        if (!accessories || typeof accessories !== 'object') accessories = {};
+                    } catch (e) {
+                        // Если парсинг не удался, НЕ затираем аксессуары, а оставляем как было
+                        accessories = {};
+                    }
+                } else {
                     accessories = {};
                 }
             }
@@ -336,12 +342,14 @@ class LabubuGame {
                 }
             }
             accessories[category] = this.selectedAccessory.image;
-            // Сохраняем в БД
-            await this.db.savePlayerData(this.userId, {
-                ...data,
-                coins: newBalance,
-                accessories
-            });
+            // Сохраняем в БД только если accessories — объект
+            if (accessories && typeof accessories === 'object') {
+                await this.db.savePlayerData(this.userId, {
+                    ...data,
+                    coins: newBalance,
+                    accessories
+                });
+            }
             this.coins = newBalance;
             this.updateUI();
             // Отобразить аксессуар на главном персонаже сразу после покупки
