@@ -119,7 +119,13 @@ class LabubuGame {
                     last_active: data.last_active,
                     stable_income: data.stable_income
                 });
-                await this.db.savePlayerData(userId, data);
+                // Безопасно обновляем только исправленные поля
+                if (data.last_active) {
+                    await this.db.updateLastActive(userId, data.last_active);
+                }
+                if (data.stable_income !== undefined) {
+                    await this.db.updateAccessoriesAndIncome(userId, undefined, data.stable_income);
+                }
                 // НЕ перезагружаем страницу, а продолжаем с исправленными данными
             }
 
@@ -486,6 +492,7 @@ class LabubuGame {
             // Списываем монеты и увеличиваем stable income
             this.coins = data.balance - this.selectedCard.price;
             this.stableIncome = (data.stable_income || 0) + this.selectedCard.stableIncome;
+            
             // Если карточка содержит поле costume, применяем его
             if (this.selectedCard.costume) {
                 this.costume = this.selectedCard.costume;
@@ -494,8 +501,16 @@ class LabubuGame {
                     labubuImg.src = 'assets/images/' + this.costume;
                 }
             }
-            // Сохраняем в БД с costume
-            await this.db.savePlayerData(this.userId, this.getPlayerDataForSave());
+            
+            // Безопасно сохраняем в БД - отдельно каждое поле
+            await this.db.updateBalance(this.userId, this.coins);
+            await this.db.updateAccessoriesAndIncome(this.userId, undefined, this.stableIncome);
+            
+            // Если изменился костюм, обновляем его отдельно
+            if (this.selectedCard.costume) {
+                await this.db.updateCostume(this.userId, this.costume);
+            }
+            
             this.updateUI();
             // Скрываем попап
             document.getElementById('popout_confirm').style.display = 'none';
@@ -718,16 +733,13 @@ class LabubuGame {
 
     saveGameData() {
         if (!this.userId || !this.db) return;
-        const gameData = {
-            coins: this.coins,
-            stableIncome: this.stableIncome,
-            profitPerClick: this.profitPerClick,
-            boost: this.boost,
-            boostTimeLeft: this.boostTimeLeft,
-            isBoostActive: this.isBoostActive,
-            lastSave: Date.now()
-        };
-        this.db.savePlayerData(this.userId, gameData);
+        
+        // Используем безопасные функции вместо полной перезаписи
+        // Обновляем только баланс (основная причина вызова этой функции)
+        this.db.updateBalance(this.userId, this.coins);
+        
+        // Если активен буст, можно добавить отдельную функцию для его обновления
+        // Но пока не критично, так как буст сейчас не используется активно
     }
 
     loadGameData() {

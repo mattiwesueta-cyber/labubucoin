@@ -225,6 +225,26 @@ class GameDatabase {
             return false;
         }
     }
+    
+    // Безопасное обновление костюма
+    async updateCostume(userId, costume) {
+        if (!this.supabase) return false;
+        try {
+            const { error } = await this.supabase
+                .from('players')
+                .update({ 
+                    costume: costume,
+                    last_updated: new Date().toISOString()
+                })
+                .eq('tg_id', userId.toString());
+            if (error) throw error;
+            console.log('Costume updated successfully:', costume);
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка обновления костюма:', error);
+            return false;
+        }
+    }
 }
 
 // Экспортируем для использования в основном скрипте
