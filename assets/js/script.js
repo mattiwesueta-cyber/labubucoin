@@ -2,15 +2,21 @@
 class LabubuGame {
     constructor() {
         this.coins = 0;
-        this.stableIncome = 3.65; // возвращаем к изначальному значению
+        this.stableIncome = 3.65; // доход в минуту
         this.profitPerClick = 1;
-        this.boost = 0;
+        this.boost = 2;
         this.boostTimeLeft = 0;
         this.isBoostActive = false;
-        this.userId = null; // сохраняем userId для обновления баланса
-        this.db = null; // GameDatabase instance
         this.costume = 'labubu.png';
         this.accessories = {};
+        this.selectedCard = null;
+        this.selectedAccessory = null;
+        this.userId = null;
+        this.isOnline = true; // флаг что игрок онлайн
+        this.onlineIncomeInterval = null; // интервал для начисления онлайн дохода
+        this.lastOnlineIncomeSave = Date.now(); // время последнего сохранения онлайн дохода
+
+        this.db = new LabubuDB();
         this.init();
     }
 
@@ -227,9 +233,25 @@ class LabubuGame {
                 const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
                 await this.db.updateLastActive(this.userId, utcTime);
             }
-            
-            // ВСЕГДА обновляем UI в конце
+
+            // Сохраняем аксессуары в объект
+            if (data.accessories) {
+                if (typeof data.accessories === 'string') {
+                    try {
+                        this.accessories = JSON.parse(data.accessories);
+                    } catch (e) {
+                        console.error('Error parsing accessories JSON:', e);
+                        this.accessories = {};
+                    }
+                } else {
+                    this.accessories = data.accessories;
+                }
+            }
+
             this.updateUI();
+            
+            // 🚀 Запускаем онлайн доход после загрузки всех данных
+            this.startOnlineIncome();
         }
     }
     
@@ -501,6 +523,12 @@ class LabubuGame {
             }
             
             this.updateUI();
+            
+            // 🔄 Перезапускаем онлайн доход с новым stable_income
+            this.restartOnlineIncome();
+            
+            this.hideCards();
+            this.selectedCard = null;
             // Скрываем попап
             document.getElementById('popout_confirm').style.display = 'none';
             // Можно показать сообщение об успехе
@@ -585,11 +613,13 @@ class LabubuGame {
             // Безопасно сохраняем аксессуары и стабильный доход в БД
             await this.db.updateAccessoriesAndIncome(this.userId, accessories, this.stableIncome);
             
-            // Обновляем баланс отдельно
-            this.coins = newBalance;
+            // Обновляем баланс в БД
             await this.db.updateBalance(this.userId, this.coins);
             
             this.updateUI();
+            
+            // 🔄 Перезапускаем онлайн доход с новым stable_income
+            this.restartOnlineIncome();
             
             // Отобразить аксессуар на главном персонаже сразу после покупки
             this.displayAccessory(category, this.selectedAccessory.image);
@@ -1074,11 +1104,98 @@ class LabubuGame {
                 console.log('Set local stable_income to:', this.stableIncome);
                 this.updateUI();
                 console.log('Stable income synced successfully');
+                
+                // Перезапускаем онлайн доход с новым значением
+                this.restartOnlineIncome();
             } else {
                 console.error('No data found in DB');
             }
         } else {
             console.error('UserId or DB not available');
+        }
+    }
+    
+    // Запуск автоматического начисления онлайн дохода
+    startOnlineIncome() {
+        // Останавливаем предыдущий интервал если есть
+        this.stopOnlineIncome();
+        
+        if (this.stableIncome <= 0) {
+            console.log('Stable income is 0, not starting online income');
+            return;
+        }
+        
+        console.log('🚀 Starting online income:', this.stableIncome, 'per minute');
+        
+        // Доход за секунду = stable_income / 60
+        const incomePerSecond = this.stableIncome / 60;
+        
+        this.onlineIncomeInterval = setInterval(() => {
+            if (this.isOnline && this.stableIncome > 0) {
+                // Добавляем доход за секунду
+                this.coins += incomePerSecond;
+                this.updateUI();
+                
+                // Сохраняем в БД каждые 30 секунд чтобы не перегружать
+                const now = Date.now();
+                if (now - this.lastOnlineIncomeSave > 30000) { // 30 секунд
+                    this.db.updateBalance(this.userId, this.coins);
+                    this.lastOnlineIncomeSave = now;
+                }
+            }
+        }, 1000); // каждую секунду
+        
+        console.log('✅ Online income started!');
+    }
+    
+    // Остановка автоматического начисления онлайн дохода
+    stopOnlineIncome() {
+        if (this.onlineIncomeInterval) {
+            clearInterval(this.onlineIncomeInterval);
+            this.onlineIncomeInterval = null;
+            console.log('⏹️ Online income stopped');
+            
+            // Сохраняем финальный баланс при остановке
+            if (this.userId && this.db) {
+                this.db.updateBalance(this.userId, this.coins);
+            }
+        }
+    }
+    
+    // Перезапуск онлайн дохода (при изменении stable_income)
+    restartOnlineIncome() {
+        console.log('🔄 Restarting online income...');
+        this.stopOnlineIncome();
+        this.startOnlineIncome();
+    }
+    
+    // Установка статуса онлайн/оффлайн
+    setOnlineStatus(isOnline) {
+        console.log('Setting online status:', isOnline);
+        this.isOnline = isOnline;
+        
+        if (isOnline) {
+            this.startOnlineIncome();
+        } else {
+            this.stopOnlineIncome();
+        }
+    }
+    
+    // Функция для отладки онлайн дохода
+    debugOnlineIncome() {
+        console.log('=== ONLINE INCOME DEBUG ===');
+        console.log('Online status:', this.isOnline);
+        console.log('Stable income per minute:', this.stableIncome);
+        console.log('Income per second:', this.stableIncome / 60);
+        console.log('Interval active:', !!this.onlineIncomeInterval);
+        console.log('Last save time:', new Date(this.lastOnlineIncomeSave).toLocaleString());
+        console.log('Time since last save:', Math.floor((Date.now() - this.lastOnlineIncomeSave) / 1000), 'seconds');
+        console.log('Current balance:', this.coins);
+        
+        if (this.onlineIncomeInterval) {
+            console.log('✅ Online income is RUNNING');
+        } else {
+            console.log('❌ Online income is STOPPED');
         }
     }
 }
@@ -1129,6 +1246,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.forceSyncBalance = () => window.labubuGame.forceSyncBalance();
     window.debugStableIncome = () => window.labubuGame.debugStableIncome();
     window.forceSyncStableIncome = () => window.labubuGame.forceSyncStableIncome();
+    window.startOnlineIncome = () => window.labubuGame.startOnlineIncome();
+    window.stopOnlineIncome = () => window.labubuGame.stopOnlineIncome();
+    window.setOnlineStatus = (status) => window.labubuGame.setOnlineStatus(status);
+    window.debugOnlineIncome = () => window.labubuGame.debugOnlineIncome();
     
     console.log('🔧 Debug functions available:');
     console.log('- debugAccessories() - показать отладочную информацию об аксессуарах');
@@ -1137,6 +1258,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('- forceSyncBalance() - принудительно синхронизировать баланс с БД');
     console.log('- debugStableIncome() - показать отладочную информацию о stable_income');
     console.log('- forceSyncStableIncome() - принудительно синхронизировать stable_income с БД');
+    console.log('- startOnlineIncome() - запустить автоматическое начисление онлайн дохода');
+    console.log('- stopOnlineIncome() - остановить автоматическое начисление онлайн дохода');
+    console.log('- setOnlineStatus(true/false) - установить статус онлайн/оффлайн');
+    console.log('- debugOnlineIncome() - показать отладочную информацию о состоянии онлайн дохода');
 
     // Обновление last_active каждую минуту
     setInterval(async () => {
@@ -1156,6 +1281,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Надёжное сохранение last_active при выходе
     window.addEventListener('beforeunload', async (e) => {
         if (window.labubuGame && window.labubuGame.userId && window.labubuGame.db) {
+            // Останавливаем онлайн доход и сохраняем финальный баланс
+            window.labubuGame.setOnlineStatus(false);
+            
             try {
                 const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
                 const { serverTime } = await timeResponse.json();
@@ -1165,6 +1293,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 // В случае ошибки используем клиентское время как fallback
                 await window.labubuGame.db.updateLastActive(window.labubuGame.userId, new Date().toISOString());
             }
+        }
+    });
+
+    // Отслеживание видимости вкладки для пауз онлайн дохода
+    document.addEventListener('visibilitychange', () => {
+        if (window.labubuGame) {
+            if (document.hidden) {
+                // Вкладка скрыта - останавливаем онлайн доход
+                console.log('🔇 Tab hidden, pausing online income');
+                window.labubuGame.setOnlineStatus(false);
+            } else {
+                // Вкладка видима - возобновляем онлайн доход
+                console.log('👁️ Tab visible, resuming online income');
+                window.labubuGame.setOnlineStatus(true);
+            }
+        }
+    });
+
+    // Отслеживание фокуса окна
+    window.addEventListener('focus', () => {
+        if (window.labubuGame) {
+            console.log('🎯 Window focused, resuming online income');
+            window.labubuGame.setOnlineStatus(true);
+        }
+    });
+
+    window.addEventListener('blur', () => {
+        if (window.labubuGame) {
+            console.log('😴 Window blurred, pausing online income');
+            window.labubuGame.setOnlineStatus(false);
         }
     });
 });
