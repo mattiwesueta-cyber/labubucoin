@@ -146,8 +146,11 @@ span, div:not(.form), img, svg, path, input {
 	background-size: 100% 100%;
 	width: 79.2869vw;
 	height: 79.2869vw;
-	transition: transform 0.3s cubic-bezier(0.4,0,0.2,1) !important;
-	will-change: transform;
+	-webkit-transition: -webkit-transform 0.2s ease-out;
+	transition: transform 0.4s ease-out;
+	-webkit-transform: translateZ(0);
+	transform: translateZ(0);
+	will-change: auto;
 }
 .labubu_pic {
 	height: 74.1935vw;
@@ -564,7 +567,7 @@ span, div:not(.form), img, svg, path, input {
 	  top 2s cubic-bezier(.4,0,.2,1),
 	  transform 2s cubic-bezier(.4,0,.2,1),
 	  opacity 2s cubic-bezier(.4,0,.2,1);
-	will-change: left, top, transform, opacity;
+	will-change: auto;
 }
 .header {
 	position: relative;
