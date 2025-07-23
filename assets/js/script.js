@@ -27,7 +27,7 @@ class LabubuGame {
         // Получаем данные пользователя через Telegram WebApp API
         await this.loadTelegramUser();
         // Искусственная задержка для лоадера
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 0));
         // Скрываем лоадер после полной загрузки
         if (loader) loader.style.display = 'none';
     }
