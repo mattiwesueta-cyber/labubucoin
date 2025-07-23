@@ -109,7 +109,8 @@ class LabubuGame {
                 };
                 // Открываем окно подтверждения
                 document.getElementById('popout_confirm').style.display = 'flex';
-                // Можно обновить инфу в попапе, если нужно
+                // Обновляем инфу в попапе
+                this.updatePopoutConfirm();
             });
         });
 
@@ -118,6 +119,20 @@ class LabubuGame {
         if (buyBtn) {
             buyBtn.addEventListener('click', () => {
                 this.handleBuyCard();
+                const popout = document.getElementById('popout_confirm');
+                if (popout) {
+                    popout.classList.add('hidepopout');
+                    setTimeout(() => {
+                        popout.style.display = 'none';
+                        popout.classList.remove('hidepopout');
+                    }, 1000);
+                }
+            });
+        }
+        // Кнопка закрытия попапа
+        const closeBtn = document.querySelector('.svg_close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
                 const popout = document.getElementById('popout_confirm');
                 if (popout) {
                     popout.classList.add('hidepopout');
@@ -411,6 +426,50 @@ class LabubuGame {
                 </div>
             `;
         }
+    }
+
+    // Добавляю метод для обновления попапа с выбранным скином
+    updatePopoutConfirm() {
+        const popout = document.getElementById('popout_confirm');
+        if (!popout || !this.selectedCard) return;
+        // Картинка
+        const img = popout.querySelector('.box_lb img');
+        if (img && this.selectedCard.costume) {
+            img.src = 'assets/images/' + this.selectedCard.costume;
+        }
+        // Название
+        const nameSpans = popout.querySelectorAll('.box_lb .row_lb span');
+        if (nameSpans.length >= 2) {
+            const parts = this.selectedCard.id.split('_');
+            nameSpans[0].textContent = parts[0] ? this.capitalize(parts[0]) : '';
+            nameSpans[1].textContent = parts[1] ? this.capitalize(parts[1]) : '';
+        }
+        // Stable income
+        const stableIncomeSpan = popout.querySelector('.box_lb .row_profit_lb .flex_i span');
+        if (stableIncomeSpan) {
+            stableIncomeSpan.textContent = '+' + this.selectedCard.stableIncome;
+        }
+        // Цена
+        const priceSpan = popout.querySelector('.price_pannel .pr_wrapper span');
+        if (priceSpan) {
+            priceSpan.textContent = this.formatNumber(this.selectedCard.price);
+        }
+        // Цветовая тема box_lb — полностью копируем классы с выбранной карточки
+        const box = popout.querySelector('.box_lb');
+        const selectedCardElem = document.querySelector(`.box_lb[data-id='${this.selectedCard.id}']`);
+        if (box && selectedCardElem) {
+            // Оставляем только базовый класс clmn
+            box.className = 'box_lb clmn';
+            // Копируем все классы кроме box_lb и clmn
+            selectedCardElem.classList.forEach(cls => {
+                if (cls !== 'box_lb' && cls !== 'clmn') {
+                    box.classList.add(cls);
+                }
+            });
+        }
+    }
+    capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
     }
 }
 

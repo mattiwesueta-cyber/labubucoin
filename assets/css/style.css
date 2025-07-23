@@ -241,9 +241,27 @@ span, div:not(.form), img, svg, path, input {
 	width: 26.6553vw;
 }
 .box_lb img {
+	position: relative;
 	height: 13.6384vw;
 	margin: auto;
 	flex-shrink: 0;
+}
+.box_lb {
+	position: relative;
+	overflow: hidden;
+}
+.box_lb::before {
+	width: 19.5246vw;
+	height: 18.8455vw;
+	background-image: url('../images/stars_bg.png');
+	background-size: 100% 100%;
+	position: absolute;
+	content: "";
+	left: 50%;
+	top: 50%;
+	mix-blend-mode: overlay;
+	opacity: 0.25;
+	transform: translateX(-50%)  translateY(-50%);
 }
 .box_lb {
 	width: 26.6553vw;
@@ -253,7 +271,7 @@ span, div:not(.form), img, svg, path, input {
 }
 .row_lb span:first-child {
 	font-size: 3.1239vw;
-	font-family: 'SemiBold';
+	font-family: 'Medium';
 }
 .row_lb span:last-child {
 	font-size: 2.4992vw;
@@ -270,6 +288,18 @@ span, div:not(.form), img, svg, path, input {
 }
 .red_box .line_lb {
 	background: #ff8774;
+}
+.brown_box {
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0) -7.82%, rgba(238, 209, 186, 0.25) 100%), rgba(60, 54, 50, 0.72);
+}
+.brown_box .line_lb {
+	background: #EED1BA;
+}
+.purple_box {
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0) -7.82%, rgba(192, 141, 253, 0.25) 100%), rgba(46, 43, 50, 0.72);
+}
+.purple_box .line_lb {
+	background: #C08DFD;
 }
 .desc_lb {
 	font-size: 2.4992vw;
@@ -351,9 +381,12 @@ span, div:not(.form), img, svg, path, input {
 	align-items: flex-start;
 	align-content: flex-start;
 	gap: 2.0374vw;
-	height: 79.966vw;
+	height: 72.966vw;
 	margin-top: 2.3769vw;
 	overflow-y: auto;
+}
+.cloth_wrapper img {
+	
 }
 .overflow_top {
 	position: relative;
@@ -453,6 +486,39 @@ span, div:not(.form), img, svg, path, input {
 .hidepopout {
 	animation: fadeInDown 0.6s ease-out forwards;
 }
+.ctg_cloth {
+	cursor: pointer;
+	height: 7.1307vw;
+	padding: 1.698vw 2.716vw;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 8.149vw;
+	gap: 1.0187vw;
+}
+.ctg_cloth svg {
+	width: 2.8862vw;
+	height: 2.8862vw;
+}
+.ctg_cloth span {
+	font-size: 3.056vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.75);
+}
+.categorys_clothes  {
+	justify-content: center;
+}
+.categorys_clothes {
+	gap: 1.3582vw;
+	margin-top: 2.0374vw;
+}
+.popout_confirm {}
+.svg_close {
+	width: 6.7912vw;
+	height: 6.7912vw;
+	position: absolute;
+	top: 3.2258vw;
+	right: 3.2258vw;
+}
+
 @keyframes fadeInDown {
 	from {
 	  transform: translateY(0);
@@ -600,7 +666,12 @@ span, div:not(.form), img, svg, path, input {
 .left_top, .right_top {
 	position: relative;
 }
-
+.absolute {
+	position: absolute !important;
+	top: 50%;
+	left: 50%;
+	transform: translateY(-50%) translateX(-50%);
+}
 
 
 
