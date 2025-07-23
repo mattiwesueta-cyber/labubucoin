@@ -145,16 +145,60 @@ class LabubuGame {
             try {
                 // Получаем серверное время
                 const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
-                const { serverTime } = await timeResponse.json();
-                const now = new Date(serverTime).getTime();
-                let lastActive = data.last_active ? new Date(data.last_active).getTime() : now;
+                const timeData = await timeResponse.json();
+                const now = timeData.timestamp; // используем timestamp напрямую
+                
+                // Проверяем, есть ли last_active в данных
+                if (!data.last_active) {
+                    console.log('No last_active time found, setting current server time');
+                    await this.db.savePlayerData(this.userId, {
+                        ...data,
+                        last_active: timeData.serverTime
+                    });
+                    return; // Выходим, так как это первый вход
+                }
+
+                let lastActive = new Date(data.last_active).getTime();
+                
+                // Отладочная информация
+                console.log('Time debug:', {
+                    serverTime: timeData.serverTime,
+                    serverTimestamp: timeData.timestamp,
+                    serverReadable: timeData.readable,
+                    lastActive: data.last_active,
+                    lastActiveTimestamp: lastActive,
+                    lastActiveReadable: new Date(lastActive).toString()
+                });
+
                 let diffMs = now - lastActive;
+                
+                // Проверка на отрицательную разницу во времени
+                if (diffMs < 0) {
+                    console.error('Negative time difference detected:', diffMs);
+                    return; // Выходим, чтобы предотвратить неправильное начисление
+                }
+                
                 let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
                 let earnMs = Math.min(diffMs, maxMs);
+
+                console.log('Time calculation:', {
+                    diffMs,
+                    maxMs,
+                    earnMs,
+                    diffMinutes: diffMs / (60 * 1000),
+                    earnMinutes: earnMs / (60 * 1000)
+                });
+
                 if (earnMs > 60 * 1000) { // если больше 1 минуты
-                    let minutes = earnMs / (60 * 1000); // stableIncome в минуту
+                    let minutes = Math.floor(earnMs / (60 * 1000)); // округляем минуты вниз
                     let earned = this.stableIncome * minutes;
-                    console.log('AFK: earnMs=', earnMs, 'minutes=', minutes, 'earned=', earned, 'lastActive=', lastActive, 'now=', now, 'serverTime=', serverTime);
+                    
+                    console.log('Reward calculation:', {
+                        minutes,
+                        stableIncome: this.stableIncome,
+                        earned
+                    });
+
                     // Показываем попап
                     const popoutEarn = document.querySelector('.popout_earn');
                     if (popoutEarn) {
@@ -174,7 +218,7 @@ class LabubuGame {
                                     // Сохраняем все данные игрока с новым временем
                                     await this.db.savePlayerData(this.userId, {
                                         ...this.getPlayerDataForSave(),
-                                        last_active: serverTime // используем серверное время
+                                        last_active: timeData.serverTime
                                     });
                                 }, 1000);
                             };
@@ -184,53 +228,11 @@ class LabubuGame {
                     // Просто обновляем last_active (если доход не начислялся)
                     await this.db.savePlayerData(this.userId, {
                         ...data,
-                        last_active: serverTime // используем серверное время
+                        last_active: timeData.serverTime
                     });
                 }
             } catch (error) {
-                console.error('Error getting server time:', error);
-                // В случае ошибки используем клиентское время как fallback
-                const now = Date.now();
-                let lastActive = data.last_active ? new Date(data.last_active).getTime() : now;
-                let diffMs = now - lastActive;
-                let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
-                let earnMs = Math.min(diffMs, maxMs);
-                if (earnMs > 60 * 1000) { // если больше 1 минуты
-                    let minutes = earnMs / (60 * 1000); // stableIncome в минуту
-                    let earned = this.stableIncome * minutes;
-                    console.log('AFK: earnMs=', earnMs, 'minutes=', minutes, 'earned=', earned, 'lastActive=', lastActive, 'now=', now, 'serverTime=', serverTime);
-                    // Показываем попап
-                    const popoutEarn = document.querySelector('.popout_earn');
-                    if (popoutEarn) {
-                        popoutEarn.style.display = 'flex';
-                        const earnCoinsSpan = document.getElementById('earn_coins');
-                        if (earnCoinsSpan) earnCoinsSpan.textContent = this.formatNumber(earned);
-                        const pickupBtn = document.getElementById('pickup_coins');
-                        if (pickupBtn) {
-                            pickupBtn.onclick = async () => {
-                                // Анимация скрытия попапа
-                                popoutEarn.classList.add('hidepopout');
-                                setTimeout(async () => {
-                                    popoutEarn.style.display = 'none';
-                                    popoutEarn.classList.remove('hidepopout');
-                                    this.coins += earned;
-                                    this.updateUI();
-                                    // Сохраняем все данные игрока с новым временем
-                                    await this.db.savePlayerData(this.userId, {
-                                        ...this.getPlayerDataForSave(),
-                                        last_active: serverTime // используем серверное время
-                                    });
-                                }, 1000);
-                            };
-                        }
-                    }
-                } else {
-                    // Просто обновляем last_active (если доход не начислялся)
-                    await this.db.savePlayerData(this.userId, {
-                        ...data,
-                        last_active: serverTime // используем серверное время
-                    });
-                }
+                console.error('Error in offline income calculation:', error);
             }
             this.updateUI();
         }

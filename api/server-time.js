@@ -1,8 +1,11 @@
 export default async function handler(req, res) {
     try {
-        // Return current server time in ISO format
+        const now = new Date();
+        // Return current server time in multiple formats for debugging
         res.status(200).json({ 
-            serverTime: new Date().toISOString()
+            serverTime: now.toISOString(),
+            timestamp: now.getTime(),
+            readable: now.toString()
         });
     } catch (error) {
         console.error('Error in server-time API:', error);
