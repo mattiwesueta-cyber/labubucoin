@@ -86,6 +86,39 @@ class LabubuGame {
         if (!this.db) return;
         const data = await this.db.loadPlayerData(userId, username);
         if (data) {
+            // Проверка и исправление некорректных значений
+            const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
+            const timeData = await timeResponse.json();
+            const now = timeData.timestamp;
+            
+            // Проверяем и исправляем некорректные значения
+            let needsUpdate = false;
+            
+            // Проверка даты last_active
+            if (!data.last_active || new Date(data.last_active).getTime() > now) {
+                data.last_active = timeData.serverTime;
+                needsUpdate = true;
+            }
+            
+            // Проверка stableIncome
+            const maxStableIncome = 100;
+            if (data.stable_income > maxStableIncome) {
+                data.stable_income = 3.65; // Сброс к начальному значению
+                needsUpdate = true;
+            }
+
+            // Если были найдены некорректные значения, обновляем данные
+            if (needsUpdate) {
+                console.log('Resetting invalid values:', {
+                    last_active: data.last_active,
+                    stable_income: data.stable_income
+                });
+                await this.db.savePlayerData(userId, data);
+                // Перезагружаем страницу для применения изменений
+                window.location.reload();
+                return;
+            }
+
             // Парсим accessories, если это строка
             if (data.accessories && typeof data.accessories === 'string') {
                 try {
@@ -94,14 +127,16 @@ class LabubuGame {
                     data.accessories = {};
                 }
             }
+            
             this.coins = data.balance || 0;
-            this.stableIncome = data.stable_income || 3.65;
+            this.stableIncome = Math.min(data.stable_income || 3.65, maxStableIncome);
             this.profitPerClick = data.profit_per_click || 1;
             this.boost = data.boost || 2;
             this.boostTimeLeft = data.boost_time_left || 0;
             this.isBoostActive = data.is_boost_active || false;
             this.costume = data.costume || 'labubu.png';
             this.accessories = data.accessories || {};
+
             // Применяем costume к картинке
             const labubuImg = document.querySelector('.labubu_pic');
             if (labubuImg) {
@@ -146,7 +181,7 @@ class LabubuGame {
                 // Получаем серверное время
                 const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
                 const timeData = await timeResponse.json();
-                const now = timeData.timestamp; // используем timestamp напрямую
+                const now = new Date(timeData.serverTime).getTime();
                 
                 // Проверяем, есть ли last_active в данных
                 if (!data.last_active) {
@@ -158,27 +193,25 @@ class LabubuGame {
                     return; // Выходим, так как это первый вход
                 }
 
-                let lastActive = new Date(data.last_active).getTime();
+                // Конвертируем last_active в UTC
+                const lastActiveDate = new Date(data.last_active);
+                const lastActive = Date.UTC(
+                    lastActiveDate.getUTCFullYear(),
+                    lastActiveDate.getUTCMonth(),
+                    lastActiveDate.getUTCDate(),
+                    lastActiveDate.getUTCHours(),
+                    lastActiveDate.getUTCMinutes(),
+                    lastActiveDate.getUTCSeconds(),
+                    lastActiveDate.getUTCMilliseconds()
+                );
                 
-                // Проверка на будущую дату
-                if (lastActive > now) {
-                    console.error('Future date detected in last_active, resetting to current time');
-                    lastActive = now;
-                    await this.db.savePlayerData(this.userId, {
-                        ...data,
-                        last_active: timeData.serverTime
-                    });
-                    return; // Выходим, так как время было сброшено
-                }
-
                 // Отладочная информация
                 console.log('Time debug:', {
                     serverTime: timeData.serverTime,
-                    serverTimestamp: timeData.timestamp,
-                    serverReadable: timeData.readable,
+                    serverTimestamp: now,
                     lastActive: data.last_active,
-                    lastActiveTimestamp: lastActive,
-                    lastActiveReadable: new Date(lastActive).toString()
+                    lastActiveUTC: new Date(lastActive).toISOString(),
+                    timezoneOffset: new Date().getTimezoneOffset()
                 });
 
                 let diffMs = now - lastActive;
