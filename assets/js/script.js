@@ -310,6 +310,14 @@ class LabubuGame {
             const newBalance = data.balance - this.selectedAccessory.price;
             // Обновляем аксессуары
             let accessories = data.accessories || {};
+            // Если accessories строка — парсим
+            if (typeof accessories === 'string') {
+                try {
+                    accessories = JSON.parse(accessories);
+                } catch (e) {
+                    accessories = {};
+                }
+            }
             // Получаем категорию из .row_lb span:last-child выбранной карточки
             const selectedCardElem = document.querySelector(`.box_lb[data-id='${this.selectedAccessory.id}']`);
             let category = this.selectedAccessory.category;
