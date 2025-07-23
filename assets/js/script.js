@@ -279,7 +279,16 @@ class LabubuGame {
             const newBalance = data.balance - this.selectedAccessory.price;
             // Обновляем аксессуары
             let accessories = data.accessories || {};
-            accessories[this.selectedAccessory.category] = this.selectedAccessory.image;
+            // Получаем категорию из .row_lb span:last-child выбранной карточки
+            const selectedCardElem = document.querySelector(`.box_lb[data-id='${this.selectedAccessory.id}']`);
+            let category = this.selectedAccessory.category;
+            if (selectedCardElem) {
+                const lastSpan = selectedCardElem.querySelector('.row_lb span:last-child');
+                if (lastSpan) {
+                    category = lastSpan.textContent.trim().toLowerCase();
+                }
+            }
+            accessories[category] = this.selectedAccessory.image;
             // Сохраняем в БД
             await this.db.savePlayerData(this.userId, {
                 ...data,
