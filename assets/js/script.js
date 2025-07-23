@@ -1156,12 +1156,48 @@ class LabubuGame {
                 
                 this.updateUI();
                 
-                // Сохраняем в БД каждые 30 секунд чтобы не перегружать
+                // Сохраняем в БД каждые 10 секунд для тестирования (было 30)
                 const now = Date.now();
-                if (now - this.lastOnlineIncomeSave > 30000) { // 30 секунд
-                    console.log('💾 Saving online income to DB:', this.coins.toFixed(4));
-                    this.db.updateBalance(this.userId, this.coins);
-                    this.lastOnlineIncomeSave = now;
+                const timeSinceLastSave = now - this.lastOnlineIncomeSave;
+                
+                // Добавляем отладку каждые 5 секунд
+                if (Math.floor(Date.now() / 1000) % 5 === 0) {
+                    console.log('⏰ Save check:', {
+                        timeSinceLastSave: Math.floor(timeSinceLastSave / 1000) + 's',
+                        shouldSave: timeSinceLastSave > 10000, // изменено на 10 секунд
+                        userId: this.userId,
+                        hasDb: !!this.db,
+                        currentBalance: this.coins.toFixed(4)
+                    });
+                }
+                
+                if (timeSinceLastSave > 10000) { // 10 секунд для тестирования
+                    console.log('💾 Attempting to save online income to DB:', this.coins.toFixed(4));
+                    console.log('📋 Save details:', {
+                        userId: this.userId,
+                        userIdType: typeof this.userId,
+                        coins: this.coins,
+                        db: !!this.db,
+                        dbSupabase: !!(this.db && this.db.supabase)
+                    });
+                    
+                    if (this.userId && this.db) {
+                        try {
+                            this.db.updateBalance(this.userId, this.coins).then(result => {
+                                console.log('✅ Save result:', result);
+                                this.lastOnlineIncomeSave = now;
+                            }).catch(error => {
+                                console.error('❌ Save error:', error);
+                            });
+                        } catch (error) {
+                            console.error('❌ Save error:', error);
+                        }
+                    } else {
+                        console.error('❌ Cannot save: userId or db missing', {
+                            userId: this.userId,
+                            db: !!this.db
+                        });
+                    }
                 }
             }
         }, 1000); // каждую секунду
@@ -1178,7 +1214,12 @@ class LabubuGame {
             
             // Сохраняем финальный баланс при остановке
             if (this.userId && this.db) {
-                this.db.updateBalance(this.userId, this.coins);
+                console.log('💾 Saving final balance on stop:', this.coins.toFixed(4));
+                this.db.updateBalance(this.userId, this.coins).then(result => {
+                    console.log('✅ Final balance saved:', result);
+                }).catch(error => {
+                    console.error('❌ Error saving final balance:', error);
+                });
             }
         }
     }
@@ -1199,6 +1240,28 @@ class LabubuGame {
             this.startOnlineIncome();
         } else {
             this.stopOnlineIncome();
+        }
+    }
+    
+    // Функция для принудительного сохранения баланса в БД
+    async forceSaveBalance() {
+        console.log('🔄 Force saving balance to DB...');
+        console.log('Current balance:', this.coins);
+        console.log('UserId:', this.userId);
+        console.log('DB available:', !!this.db);
+        
+        if (this.userId && this.db) {
+            try {
+                const result = await this.db.updateBalance(this.userId, this.coins);
+                console.log('✅ Force save result:', result);
+                return result;
+            } catch (error) {
+                console.error('❌ Force save error:', error);
+                return false;
+            }
+        } else {
+            console.error('❌ Cannot force save: userId or db missing');
+            return false;
         }
     }
     
@@ -1271,6 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.stopOnlineIncome = () => window.labubuGame.stopOnlineIncome();
     window.setOnlineStatus = (status) => window.labubuGame.setOnlineStatus(status);
     window.debugOnlineIncome = () => window.labubuGame.debugOnlineIncome();
+    window.forceSaveBalance = () => window.labubuGame.forceSaveBalance();
     
     console.log('🔧 Debug functions available:');
     console.log('- debugAccessories() - показать отладочную информацию об аксессуарах');
@@ -1283,6 +1347,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('- stopOnlineIncome() - остановить автоматическое начисление онлайн дохода');
     console.log('- setOnlineStatus(true/false) - установить статус онлайн/оффлайн');
     console.log('- debugOnlineIncome() - показать отладочную информацию о состоянии онлайн дохода');
+    console.log('- forceSaveBalance() - принудительно сохранить текущий баланс в БД');
 
     // Обновление last_active каждую минуту
     setInterval(async () => {
