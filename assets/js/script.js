@@ -142,43 +142,95 @@ class LabubuGame {
                 this.isBoostActive = false;
             }
             // === Оффлайн доход ===
-            const now = Date.now();
-            let lastActive = data.last_active ? new Date(data.last_active).getTime() : now;
-            let diffMs = now - lastActive;
-            let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
-            let earnMs = Math.min(diffMs, maxMs);
-            if (earnMs > 60 * 1000) { // если больше 1 минуты
-                let minutes = earnMs / (60 * 1000); // stableIncome в минуту
-                let earned = this.stableIncome * minutes;
-                console.log('AFK: earnMs=', earnMs, 'minutes=', minutes, 'earned=', earned, 'lastActive=', lastActive, 'now=', now);
-                // Показываем попап
-                const popoutEarn = document.querySelector('.popout_earn');
-                if (popoutEarn) {
-                    popoutEarn.style.display = 'flex';
-                    const earnCoinsSpan = document.getElementById('earn_coins');
-                    if (earnCoinsSpan) earnCoinsSpan.textContent = this.formatNumber(earned);
-                    const pickupBtn = document.getElementById('pickup_coins');
-                    if (pickupBtn) {
-                        pickupBtn.onclick = async () => {
-                            // Анимация скрытия попапа
-                            popoutEarn.classList.add('hidepopout');
-                            setTimeout(async () => {
-                                popoutEarn.style.display = 'none';
-                                popoutEarn.classList.remove('hidepopout');
-                                this.coins += earned;
-                                this.updateUI();
-                                // Сохраняем все данные игрока
-                                await this.db.savePlayerData(this.userId, this.getPlayerDataForSave());
-                            }, 1000);
-                        };
+            try {
+                // Получаем серверное время
+                const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
+                const { serverTime } = await timeResponse.json();
+                const now = new Date(serverTime).getTime();
+                let lastActive = data.last_active ? new Date(data.last_active).getTime() : now;
+                let diffMs = now - lastActive;
+                let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
+                let earnMs = Math.min(diffMs, maxMs);
+                if (earnMs > 60 * 1000) { // если больше 1 минуты
+                    let minutes = earnMs / (60 * 1000); // stableIncome в минуту
+                    let earned = this.stableIncome * minutes;
+                    console.log('AFK: earnMs=', earnMs, 'minutes=', minutes, 'earned=', earned, 'lastActive=', lastActive, 'now=', now, 'serverTime=', serverTime);
+                    // Показываем попап
+                    const popoutEarn = document.querySelector('.popout_earn');
+                    if (popoutEarn) {
+                        popoutEarn.style.display = 'flex';
+                        const earnCoinsSpan = document.getElementById('earn_coins');
+                        if (earnCoinsSpan) earnCoinsSpan.textContent = this.formatNumber(earned);
+                        const pickupBtn = document.getElementById('pickup_coins');
+                        if (pickupBtn) {
+                            pickupBtn.onclick = async () => {
+                                // Анимация скрытия попапа
+                                popoutEarn.classList.add('hidepopout');
+                                setTimeout(async () => {
+                                    popoutEarn.style.display = 'none';
+                                    popoutEarn.classList.remove('hidepopout');
+                                    this.coins += earned;
+                                    this.updateUI();
+                                    // Сохраняем все данные игрока с новым временем
+                                    await this.db.savePlayerData(this.userId, {
+                                        ...this.getPlayerDataForSave(),
+                                        last_active: serverTime // используем серверное время
+                                    });
+                                }, 1000);
+                            };
+                        }
                     }
+                } else {
+                    // Просто обновляем last_active (если доход не начислялся)
+                    await this.db.savePlayerData(this.userId, {
+                        ...data,
+                        last_active: serverTime // используем серверное время
+                    });
                 }
-            } else {
-                // Просто обновляем last_active (если доход не начислялся)
-                await this.db.savePlayerData(this.userId, {
-                    ...data,
-                    last_active: new Date().toISOString()
-                });
+            } catch (error) {
+                console.error('Error getting server time:', error);
+                // В случае ошибки используем клиентское время как fallback
+                const now = Date.now();
+                let lastActive = data.last_active ? new Date(data.last_active).getTime() : now;
+                let diffMs = now - lastActive;
+                let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
+                let earnMs = Math.min(diffMs, maxMs);
+                if (earnMs > 60 * 1000) { // если больше 1 минуты
+                    let minutes = earnMs / (60 * 1000); // stableIncome в минуту
+                    let earned = this.stableIncome * minutes;
+                    console.log('AFK: earnMs=', earnMs, 'minutes=', minutes, 'earned=', earned, 'lastActive=', lastActive, 'now=', now, 'serverTime=', serverTime);
+                    // Показываем попап
+                    const popoutEarn = document.querySelector('.popout_earn');
+                    if (popoutEarn) {
+                        popoutEarn.style.display = 'flex';
+                        const earnCoinsSpan = document.getElementById('earn_coins');
+                        if (earnCoinsSpan) earnCoinsSpan.textContent = this.formatNumber(earned);
+                        const pickupBtn = document.getElementById('pickup_coins');
+                        if (pickupBtn) {
+                            pickupBtn.onclick = async () => {
+                                // Анимация скрытия попапа
+                                popoutEarn.classList.add('hidepopout');
+                                setTimeout(async () => {
+                                    popoutEarn.style.display = 'none';
+                                    popoutEarn.classList.remove('hidepopout');
+                                    this.coins += earned;
+                                    this.updateUI();
+                                    // Сохраняем все данные игрока с новым временем
+                                    await this.db.savePlayerData(this.userId, {
+                                        ...this.getPlayerDataForSave(),
+                                        last_active: serverTime // используем серверное время
+                                    });
+                                }, 1000);
+                            };
+                        }
+                    }
+                } else {
+                    // Просто обновляем last_active (если доход не начислялся)
+                    await this.db.savePlayerData(this.userId, {
+                        ...data,
+                        last_active: serverTime // используем серверное время
+                    });
+                }
             }
             this.updateUI();
         }
@@ -795,19 +847,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // renderAccessories(); // убрано, если функции нет
 
     // Обновление last_active каждую минуту
-    setInterval(() => {
+    setInterval(async () => {
         if (window.labubuGame && window.labubuGame.userId && window.labubuGame.db) {
-            window.labubuGame.db.savePlayerData(window.labubuGame.userId, window.labubuGame.getPlayerDataForSave());
-            // console.log('last_active updated!');
+            try {
+                const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
+                const { serverTime } = await timeResponse.json();
+                await window.labubuGame.db.savePlayerData(window.labubuGame.userId, {
+                    ...window.labubuGame.getPlayerDataForSave(),
+                    last_active: serverTime
+                });
+            } catch (error) {
+                console.error('Error updating last_active:', error);
+                // В случае ошибки используем клиентское время как fallback
+                await window.labubuGame.db.savePlayerData(window.labubuGame.userId, window.labubuGame.getPlayerDataForSave());
+            }
         }
     }, 60 * 1000);
-});
 
-// Надёжное сохранение last_active при выходе
-window.addEventListener('beforeunload', (e) => {
-    if (window.labubuGame && window.labubuGame.userId && window.labubuGame.db) {
-        window.labubuGame.db.savePlayerData(window.labubuGame.userId, window.labubuGame.getPlayerDataForSave());
-    }
+    // Надёжное сохранение last_active при выходе
+    window.addEventListener('beforeunload', async (e) => {
+        if (window.labubuGame && window.labubuGame.userId && window.labubuGame.db) {
+            try {
+                const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
+                const { serverTime } = await timeResponse.json();
+                await window.labubuGame.db.savePlayerData(window.labubuGame.userId, {
+                    ...window.labubuGame.getPlayerDataForSave(),
+                    last_active: serverTime
+                });
+            } catch (error) {
+                console.error('Error saving last_active on unload:', error);
+                // В случае ошибки используем клиентское время как fallback
+                await window.labubuGame.db.savePlayerData(window.labubuGame.userId, window.labubuGame.getPlayerDataForSave());
+            }
+        }
+    });
 });
 
 document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {
