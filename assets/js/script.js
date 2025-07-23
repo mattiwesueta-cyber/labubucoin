@@ -23,8 +23,8 @@ class LabubuGame {
             boostTimeLeft: this.boostTimeLeft,
             isBoostActive: this.isBoostActive,
             costume: this.costume,
-            accessories: this.accessories,
-            last_active: new Date().toISOString()
+            accessories: this.accessories
+            // last_active больше не передаём с клиента!
         };
     }
 
