@@ -579,7 +579,12 @@ class LabubuGame {
             accessories[category] = this.selectedAccessory.image;
             this.accessories = accessories; // обязательно обновляем актуальные аксессуары
             
+            // Увеличиваем стабильный доход при покупке аксессуара
+            this.stableIncome += this.selectedAccessory.stableIncome;
+            
             console.log('Updated accessories:', accessories);
+            console.log('Increased stable income by:', this.selectedAccessory.stableIncome);
+            console.log('New stable income:', this.stableIncome);
             
             // Сохраняем в БД
             const saveData = this.getPlayerDataForSave();
