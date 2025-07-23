@@ -373,7 +373,7 @@ span, div:not(.form), img, svg, path, input {
 	opacity: 0.05;
 	left: -30vw;
 }
-.overflow_u {
+.overflow_u, .overflow_clothes {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
@@ -647,6 +647,17 @@ span, div:not(.form), img, svg, path, input {
 }
 .stableincome_row span:last-child {
 	color: #FFF1B8;
+}
+.selected_cloth_ctg {
+	background: linear-gradient(118.3deg, #F5AAA5 15%, #FEEDB7 105%);
+	box-shadow: 0vw 1.698vw 4.109vw rgba(245, 172, 166, 0.5);
+}
+.selected_cloth_ctg span {
+	font-family: 'mEDIUM';
+	color: rgba(0, 0, 0, 0.75);
+}
+.selected_cloth_ctg svg path {
+	fill: black;
 }
 
 .pannel_top {

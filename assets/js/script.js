@@ -100,17 +100,34 @@ class LabubuGame {
         // Обработка клика по карточкам апгрейда
         document.querySelectorAll('.box_lb').forEach(card => {
             card.addEventListener('click', (e) => {
-                // Сохраняем выбранную карточку
-                this.selectedCard = {
-                    id: card.dataset.id,
-                    price: parseInt(card.dataset.price, 10),
-                    stableIncome: parseInt(card.dataset.stableIncome, 10),
-                    costume: card.dataset.costume || null
-                };
-                // Открываем окно подтверждения
-                document.getElementById('popout_confirm').style.display = 'flex';
-                // Обновляем инфу в попапе
-                this.updatePopoutConfirm();
+                // Проверяем, находится ли карточка в .overflow_clothes (аксессуары)
+                if (card.closest('.overflow_clothes')) {
+                    // Это аксессуар
+                    this.selectedAccessory = {
+                        id: card.dataset.id,
+                        price: parseInt(card.dataset.price, 10),
+                        stableIncome: parseInt(card.dataset.stableIncome, 10),
+                        costume: card.dataset.costume || null,
+                        category: card.dataset.category || '',
+                        name: card.querySelector('.row_lb span')?.textContent + ' ' + (card.querySelector('.row_lb span:nth-child(2)')?.textContent || ''),
+                        image: card.querySelector('img.absolute')?.src || card.dataset.image || ''
+                    };
+                    const popout = document.getElementById('popout_confirm_acces');
+                    if (popout) {
+                        popout.style.display = 'flex';
+                        this.updatePopoutConfirmAcces();
+                    }
+                } else {
+                    // Это обычный suit
+                    this.selectedCard = {
+                        id: card.dataset.id,
+                        price: parseInt(card.dataset.price, 10),
+                        stableIncome: parseInt(card.dataset.stableIncome, 10),
+                        costume: card.dataset.costume || null
+                    };
+                    document.getElementById('popout_confirm').style.display = 'flex';
+                    this.updatePopoutConfirm();
+                }
             });
         });
 
@@ -143,6 +160,63 @@ class LabubuGame {
                 }
             });
         }
+        // Кнопка покупки аксессуара
+        const buyAccesBtn = document.querySelector('#popout_confirm_acces #buy_acces_button');
+        if (buyAccesBtn) {
+            buyAccesBtn.addEventListener('click', async () => {
+                await this.handleBuyAccessory();
+                const popout = document.getElementById('popout_confirm_acces');
+                if (popout) {
+                    popout.classList.add('hidepopout');
+                    setTimeout(() => {
+                        popout.style.display = 'none';
+                        popout.classList.remove('hidepopout');
+                    }, 1000);
+                }
+            });
+        }
+        // Кнопка закрытия попапа аксессуара
+        const closeAccesBtn = document.querySelector('#popout_confirm_acces .svg_close');
+        if (closeAccesBtn) {
+            closeAccesBtn.addEventListener('click', () => {
+                const popout = document.getElementById('popout_confirm_acces');
+                if (popout) {
+                    popout.classList.add('hidepopout');
+                    setTimeout(() => {
+                        popout.style.display = 'none';
+                        popout.classList.remove('hidepopout');
+                    }, 1000);
+                }
+            });
+        }
+
+        document.querySelectorAll('.ctg_cloth').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Снимаем выделение со всех категорий
+                document.querySelectorAll('.ctg_cloth').forEach(b => b.classList.remove('selected_cloth_ctg'));
+                // Добавляем выделение выбранной
+                this.classList.add('selected_cloth_ctg');
+
+                const category = this.querySelector('span').textContent.trim().toLowerCase();
+
+                if (category === 'suit') {
+                    document.querySelector('.overflow_u').style.display = '';
+                    document.querySelector('.overflow_clothes').style.display = 'none';
+                } else {
+                    document.querySelector('.overflow_u').style.display = 'none';
+                    document.querySelector('.overflow_clothes').style.display = '';
+                    // Фильтруем карточки внутри overflow_clothes
+                    document.querySelectorAll('.overflow_clothes .box_lb').forEach(card => {
+                        const id = card.dataset.id ? card.dataset.id.toLowerCase() : '';
+                        if (id.includes(category)) {
+                            card.parentElement.style.display = ''; // wrapper_lb
+                        } else {
+                            card.parentElement.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        });
     }
 
     handleClick() {
@@ -190,6 +264,32 @@ class LabubuGame {
             // Можно показать сообщение об успехе
         } else {
             // Недостаточно монет, показать ошибку
+            alert('Недостаточно монет для покупки!');
+        }
+    }
+
+    // Покупка аксессуара
+    async handleBuyAccessory() {
+        if (!this.selectedAccessory || !this.userId || !this.db) return;
+        // Получаем данные пользователя
+        const data = await this.db.loadPlayerData(this.userId);
+        if (!data) return;
+        if (data.balance >= this.selectedAccessory.price) {
+            // Списываем монеты
+            const newBalance = data.balance - this.selectedAccessory.price;
+            // Обновляем аксессуары
+            let accessories = data.accessories || {};
+            accessories[this.selectedAccessory.category] = this.selectedAccessory.image;
+            // Сохраняем в БД
+            await this.db.savePlayerData(this.userId, {
+                ...data,
+                coins: newBalance,
+                accessories
+            });
+            this.coins = newBalance;
+            this.updateUI();
+            // Можно показать сообщение об успехе
+        } else {
             alert('Недостаточно монет для покупки!');
         }
     }
@@ -468,10 +568,65 @@ class LabubuGame {
             });
         }
     }
+
+    // Обновление попапа аксессуара
+    updatePopoutConfirmAcces() {
+        const popout = document.getElementById('popout_confirm_acces');
+        if (!popout || !this.selectedAccessory) return;
+        // НЕ меняем src у обычного img!
+        // Меняем только у img.absolute
+        const absImg = popout.querySelector('.box_lb img.absolute');
+        if (absImg && this.selectedAccessory.image) {
+            absImg.src = this.selectedAccessory.image;
+            absImg.style.display = '';
+        }
+        // Название — копируем из выбранной карточки
+        const selectedCardElem = document.querySelector(`.box_lb[data-id='${this.selectedAccessory.id}']`);
+        const nameSpans = popout.querySelectorAll('.box_lb .row_lb span');
+        if (selectedCardElem) {
+            const cardNameSpans = selectedCardElem.querySelectorAll('.row_lb span');
+            if (nameSpans.length >= 2 && cardNameSpans.length >= 2) {
+                nameSpans[0].textContent = cardNameSpans[0].textContent;
+                nameSpans[1].textContent = cardNameSpans[1].textContent;
+            }
+        } else if (nameSpans.length >= 2) {
+            // fallback: разбиваем по пробелу
+            const parts = this.selectedAccessory.name.split(' ');
+            nameSpans[0].textContent = parts[0] || '';
+            nameSpans[1].textContent = parts.slice(1).join(' ') || '';
+        }
+        // Stable income
+        const stableIncomeSpan = popout.querySelector('.box_lb .row_profit_lb .flex_i span');
+        if (stableIncomeSpan) {
+            stableIncomeSpan.textContent = '+' + this.selectedAccessory.stableIncome;
+        }
+        // Цена
+        const priceSpan = popout.querySelector('.price_pannel .pr_wrapper span');
+        if (priceSpan) {
+            priceSpan.textContent = this.formatNumber(this.selectedAccessory.price);
+        }
+        // Картинка аксессуара (absolute)
+        const absImg2 = popout.querySelector('.box_lb img.absolute');
+        if (absImg2 && this.selectedAccessory.image) {
+            absImg2.src = this.selectedAccessory.image;
+            absImg2.style.display = '';
+        }
+        // Цветовая тема box_lb
+        const box = popout.querySelector('.box_lb');
+        if (box && selectedCardElem) {
+            box.className = 'box_lb clmn';
+            selectedCardElem.classList.forEach(cls => {
+                if (cls !== 'box_lb' && cls !== 'clmn') {
+                    box.classList.add(cls);
+                }
+            });
+        }
+    }
     capitalize(str) {
         return str.charAt(0).toUpperCase() + str.slice(1);
     }
 }
+
 
 // === Анимация кружков на фоне ===
 function randomizeCircle(circle, areaW, areaH) {
@@ -509,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🎮 LabubuCoin Game запущена!');
     setInterval(animateCircles, 2000);
     animateCircles();
+    renderAccessories();
 }); 
 
 document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {
