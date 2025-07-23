@@ -445,11 +445,11 @@ class LabubuGame {
 
     formatNumber(num) {
         if (num >= 1e9) {
-            return (num / 1e9).toFixed(1) + 'B';
+            return (Math.floor(num / 1e6) / 1000).toString() + 'B'; // 3 знака после запятой
         } else if (num >= 1e6) {
-            return (num / 1e6).toFixed(1) + 'M';
+            return (Math.floor(num / 1e3) / 1000).toString() + 'M'; // 3 знака после запятой
         } else if (num >= 1e3) {
-            return (num / 1e3).toFixed(1) + 'K';
+            return (Math.floor(num) / 1000).toString() + 'K'; // 3 знака после запятой
         }
         return Math.floor(num).toString();
     }
