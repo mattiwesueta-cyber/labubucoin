@@ -131,8 +131,8 @@ class LabubuGame {
             let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
             let earnMs = Math.min(diffMs, maxMs);
             if (earnMs > 60 * 1000) { // если больше 1 минуты
-                let hours = earnMs / (60 * 60 * 1000);
-                let earned = this.stableIncome * hours;
+                let minutes = earnMs / (60 * 1000); // stableIncome в минуту
+                let earned = this.stableIncome * minutes;
                 // Показываем попап
                 const popoutEarn = document.querySelector('.popout_earn');
                 if (popoutEarn) {
@@ -503,11 +503,11 @@ class LabubuGame {
 
     formatNumber(num) {
         if (num >= 1e9) {
-            return (Math.floor(num / 1e7) / 100).toString() + 'B'; // 2 знака после запятой
+            return (Math.floor(num / 1e7) / 100).toFixed(2) + 'B'; // 2 знака после запятой
         } else if (num >= 1e6) {
-            return (Math.floor(num / 1e4) / 100).toString() + 'M'; // 2 знака после запятой
+            return (Math.floor(num / 1e4) / 100).toFixed(2) + 'M'; // 2 знака после запятой
         } else if (num >= 1e3) {
-            return (Math.floor(num / 10) / 100).toString() + 'K'; // 2 знака после запятой
+            return (Math.floor(num) / 1000).toFixed(2) + 'K'; // 2 знака после запятой
         }
         return Math.floor(num).toString();
     }
