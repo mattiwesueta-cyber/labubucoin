@@ -19,7 +19,7 @@ class GameDatabase {
     async savePlayerData(userId, gameData) {
         if (!this.supabase) return false;
         try {
-            const { error } = await this.supabase
+            const { error, data: upsertData } = await this.supabase
                 .from('players')
                 .upsert({
                     tg_id: userId.toString(),
@@ -34,6 +34,7 @@ class GameDatabase {
                     last_active: gameData.last_active || new Date().toISOString(),
                     last_updated: new Date().toISOString()
                 }, { onConflict: 'tg_id' });
+            console.log('savePlayerData upsert:', { error, upsertData, last_active: gameData.last_active });
             if (error) throw error;
             return true;
         } catch (error) {
