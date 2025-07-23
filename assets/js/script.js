@@ -82,6 +82,37 @@ class LabubuGame {
             if (labubuImg) {
                 labubuImg.src = 'assets/images/' + this.costume;
             }
+            // Подгружаем аксессуары, если есть
+            if (data.accessories) {
+                // Ожидается, что accessories = { hat: url, shoes: url, bag: url, ... }
+                const hatImg = document.getElementById('hat');
+                const shoesImg = document.getElementById('shoes');
+                const bagImg = document.getElementById('bag');
+                if (hatImg) {
+                    if (data.accessories.hat) {
+                        hatImg.src = data.accessories.hat;
+                        hatImg.style.display = '';
+                    } else {
+                        hatImg.style.display = 'none';
+                    }
+                }
+                if (shoesImg) {
+                    if (data.accessories.shoes) {
+                        shoesImg.src = data.accessories.shoes;
+                        shoesImg.style.display = '';
+                    } else {
+                        shoesImg.style.display = 'none';
+                    }
+                }
+                if (bagImg) {
+                    if (data.accessories.bag) {
+                        bagImg.src = data.accessories.bag;
+                        bagImg.style.display = '';
+                    } else {
+                        bagImg.style.display = 'none';
+                    }
+                }
+            }
             // Проверяем, не истек ли буст
             if (this.isBoostActive && this.boostTimeLeft <= 0) {
                 this.isBoostActive = false;
@@ -297,6 +328,26 @@ class LabubuGame {
             });
             this.coins = newBalance;
             this.updateUI();
+            // Отобразить аксессуар на главном персонаже сразу после покупки
+            if (category === 'hat') {
+                const hatImg = document.getElementById('hat');
+                if (hatImg) {
+                    hatImg.src = this.selectedAccessory.image;
+                    hatImg.style.display = '';
+                }
+            } else if (category === 'shoes') {
+                const shoesImg = document.getElementById('shoes');
+                if (shoesImg) {
+                    shoesImg.src = this.selectedAccessory.image;
+                    shoesImg.style.display = '';
+                }
+            } else if (category === 'bag') {
+                const bagImg = document.getElementById('bag');
+                if (bagImg) {
+                    bagImg.src = this.selectedAccessory.image;
+                    bagImg.style.display = '';
+                }
+            }
             // Можно показать сообщение об успехе
         } else {
             alert('Недостаточно монет для покупки!');

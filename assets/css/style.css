@@ -659,6 +659,11 @@ span, div:not(.form), img, svg, path, input {
 .selected_cloth_ctg svg path {
 	fill: black;
 }
+.clothonmain {
+	position: absolute;
+	height: 74.1935vw;
+	margin-bottom: 10vw;
+}
 
 .pannel_top {
 	position: relative;
