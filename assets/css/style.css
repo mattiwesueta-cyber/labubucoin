@@ -333,6 +333,16 @@ span, div:not(.form), img, svg, path, input {
 	font-family: 'Regular';
 	color: rgba(255, 255, 255, 0.75);
 }
+.top_page {
+	overflow: hidden;
+}
+.cup_icon {
+	position: absolute;
+	width: 109.168vw;
+	top: -7vw;
+	opacity: 0.05;
+	left: -30vw;
+}
 .overflow_u {
 	display: flex;
 	flex-direction: row;
@@ -346,6 +356,7 @@ span, div:not(.form), img, svg, path, input {
 	overflow-y: auto;
 }
 .overflow_top {
+	position: relative;
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
@@ -388,6 +399,9 @@ span, div:not(.form), img, svg, path, input {
 	border: 0.17vw solid #FFF1B8;
 	border-radius: 9.338vw;
 }
+.selected_ctg g  {
+	opacity: 1;
+}
 .selected_ctg svg path {
 	fill-opacity: 1;
 	fill: #FFF1B8;
@@ -427,6 +441,9 @@ span, div:not(.form), img, svg, path, input {
 .main_page, .upgrade_page {
 	position: absolute;
 	left: 50%;
+	animation: fadeInUp 0.6s ease-out forwards;
+}
+.top_page {
 	animation: fadeInUp 0.6s ease-out forwards;
 }
 

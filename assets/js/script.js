@@ -455,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {
     btn.addEventListener('click', function() {
       // Скрыть все основные страницы
-      document.querySelectorAll('.main_page, .upgrade_page').forEach(page => {
+      document.querySelectorAll('.main_page, .upgrade_page, .top_page').forEach(page => {
         page.style.display = 'none';
       });
       // Показать нужную
