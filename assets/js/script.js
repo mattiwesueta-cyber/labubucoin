@@ -287,15 +287,16 @@ class LabubuGame {
                     labubuImg.src = 'assets/images/' + this.costume;
                 }
             }
-            // Сохраняем в БД
+            // Сохраняем в БД с costume
             await this.db.savePlayerData(this.userId, {
+                ...data,
                 coins: this.coins,
                 stableIncome: this.stableIncome,
                 profitPerClick: this.profitPerClick,
                 boost: this.boost,
                 boostTimeLeft: this.boostTimeLeft,
                 isBoostActive: this.isBoostActive,
-                costume: this.costume || 'labubu.png'
+                costume: this.costume // <-- обязательно сохраняем costume
             });
             this.updateUI();
             // Скрываем попап
