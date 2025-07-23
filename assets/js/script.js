@@ -702,24 +702,20 @@ class LabubuGame {
     // Удаляю startIncomeTimer полностью
 
     updateUI() {
-        // Обновляем баланс монет
+        // Отображаем баланс с точностью до 2 знаков после запятой
         const balanceElement = document.querySelector('.flex_balance span');
         if (balanceElement) {
-            balanceElement.textContent = this.formatNumber(this.coins);
+            balanceElement.textContent = this.coins.toFixed(2);
         }
 
-        // Обновляем стабильный доход
         const stableIncomeElement = document.querySelector('.flex_i span');
         if (stableIncomeElement) {
-            const income = this.stableIncome * (this.isBoostActive ? this.boost : 1);
-            stableIncomeElement.textContent = `+${income.toFixed(2)}`;
+            stableIncomeElement.textContent = this.stableIncome.toFixed(2);
         }
 
-        // Обновляем прибыль за клик
-        const profitElement = document.querySelector('.blue_pannel .flex_i span');
-        if (profitElement) {
-            const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
-            profitElement.textContent = profit;
+        const profitPerClickElement = document.querySelector('.flex_c span');
+        if (profitPerClickElement) {
+            profitPerClickElement.textContent = this.profitPerClick.toString();
         }
 
         // Обновляем буст
@@ -1143,13 +1139,27 @@ class LabubuGame {
         
         this.onlineIncomeInterval = setInterval(() => {
             if (this.isOnline && this.stableIncome > 0) {
+                const oldCoins = this.coins;
+                
                 // Добавляем доход за секунду
                 this.coins += incomePerSecond;
+                
+                // Логируем каждые 10 секунд для не засорения консоли
+                if (Math.floor(Date.now() / 1000) % 10 === 0) {
+                    console.log('💰 Online income:', {
+                        before: oldCoins.toFixed(4),
+                        added: incomePerSecond.toFixed(4),
+                        after: this.coins.toFixed(4),
+                        stableIncomePerMin: this.stableIncome
+                    });
+                }
+                
                 this.updateUI();
                 
                 // Сохраняем в БД каждые 30 секунд чтобы не перегружать
                 const now = Date.now();
                 if (now - this.lastOnlineIncomeSave > 30000) { // 30 секунд
+                    console.log('💾 Saving online income to DB:', this.coins.toFixed(4));
                     this.db.updateBalance(this.userId, this.coins);
                     this.lastOnlineIncomeSave = now;
                 }

@@ -19,9 +19,12 @@ class GameDatabase {
     async savePlayerData(userId, gameData) {
         if (!this.supabase) return false;
         try {
+            // Округляем баланс для сохранения в integer поле
+            const roundedBalance = Math.floor(gameData.coins);
+            
             console.log('Saving player data:', {
                 userId,
-                balance: gameData.coins, // Убираем Math.floor для точного сохранения баланса
+                balance: gameData.coins + ' → ' + roundedBalance,
                 stableIncome: gameData.stableIncome,
                 accessories: gameData.accessories
             });
@@ -39,40 +42,43 @@ class GameDatabase {
                     last_updated: new Date().toISOString()
                 };
                 
-                if (gameData.coins !== undefined) updateData.balance = gameData.coins;
-                if (gameData.stableIncome !== undefined) updateData.stable_income = gameData.stableIncome;
+                if (gameData.coins !== undefined) updateData.balance = roundedBalance;
+                if (gameData.stableIncome !== undefined) updateData.stable_income = Math.floor(gameData.stableIncome);
                 if (gameData.profitPerClick !== undefined) updateData.profit_per_click = Math.floor(gameData.profitPerClick);
                 if (gameData.boost !== undefined) updateData.boost = Math.floor(gameData.boost);
                 if (gameData.boostTimeLeft !== undefined) updateData.boost_time_left = Math.floor(gameData.boostTimeLeft);
                 if (gameData.isBoostActive !== undefined) updateData.is_boost_active = gameData.isBoostActive;
                 if (gameData.costume !== undefined) updateData.costume = gameData.costume;
-                if (gameData.accessories !== undefined) updateData.accessories = gameData.accessories ? JSON.stringify(gameData.accessories) : null;
-                if (gameData.last_active !== undefined) updateData.last_active = gameData.last_active;
+                if (gameData.accessories !== undefined) {
+                    updateData.accessories = typeof gameData.accessories === 'string' 
+                        ? gameData.accessories 
+                        : JSON.stringify(gameData.accessories);
+                }
                 
-                const { error } = await this.supabase
+                const { error: updateError } = await this.supabase
                     .from('players')
                     .update(updateData)
                     .eq('tg_id', userId.toString());
                     
-                if (error) throw error;
+                if (updateError) throw updateError;
             } else {
-                // Если игрока нет, создаем новую запись
+                // Если игрока нет, создаем нового
                 const { error } = await this.supabase
                     .from('players')
-                    .insert([{
+                    .upsert({
                         tg_id: userId.toString(),
-                        balance: gameData.coins || 0,
-                        stable_income: gameData.stableIncome || 0,
-                        profit_per_click: Math.floor(gameData.profitPerClick || 1),
-                        boost: Math.floor(gameData.boost || 2),
-                        boost_time_left: Math.floor(gameData.boostTimeLeft || 0),
-                        is_boost_active: gameData.isBoostActive || false,
-                        costume: gameData.costume || 'labubu.png',
-                        accessories: gameData.accessories ? JSON.stringify(gameData.accessories) : null,
-                        last_active: gameData.last_active || new Date().toISOString(),
+                        balance: roundedBalance,
+                        stable_income: Math.floor(gameData.stableIncome),
+                        profit_per_click: Math.floor(gameData.profitPerClick),
+                        boost: Math.floor(gameData.boost),
+                        boost_time_left: Math.floor(gameData.boostTimeLeft),
+                        is_boost_active: gameData.isBoostActive,
+                        costume: gameData.costume,
+                        accessories: typeof gameData.accessories === 'string' 
+                            ? gameData.accessories 
+                            : JSON.stringify(gameData.accessories || {}),
                         last_updated: new Date().toISOString()
-                    }]);
-                    
+                    });
                 if (error) throw error;
             }
             
@@ -183,15 +189,18 @@ class GameDatabase {
     async updateBalance(userId, balance) {
         if (!this.supabase) return false;
         try {
+            // Округляем баланс для сохранения в integer поле
+            const roundedBalance = Math.floor(balance);
+            console.log('Updating balance:', balance, '→ rounded:', roundedBalance);
+            
             const { error } = await this.supabase
                 .from('players')
                 .update({ 
-                    balance: balance,
+                    balance: roundedBalance,
                     last_updated: new Date().toISOString()
                 })
                 .eq('tg_id', userId.toString());
             if (error) throw error;
-            console.log('Balance updated successfully:', balance);
             return true;
         } catch (error) {
             console.error('❌ Ошибка обновления баланса:', error);
@@ -208,18 +217,23 @@ class GameDatabase {
             };
             
             if (accessories !== undefined) {
-                updateData.accessories = accessories ? JSON.stringify(accessories) : null;
+                updateData.accessories = typeof accessories === 'string' 
+                    ? accessories 
+                    : JSON.stringify(accessories || {});
             }
+            
             if (stableIncome !== undefined) {
-                updateData.stable_income = stableIncome;
+                // Округляем stableIncome для сохранения в БД
+                updateData.stable_income = Math.floor(stableIncome);
+                console.log('Updating stable_income:', stableIncome, '→ rounded:', Math.floor(stableIncome));
             }
             
             const { error } = await this.supabase
                 .from('players')
                 .update(updateData)
                 .eq('tg_id', userId.toString());
+                
             if (error) throw error;
-            console.log('Accessories and income updated successfully');
             return true;
         } catch (error) {
             console.error('❌ Ошибка обновления аксессуаров и дохода:', error);
