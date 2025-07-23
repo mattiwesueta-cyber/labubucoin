@@ -72,7 +72,7 @@ span, div:not(.form), img, svg, path, input {
 .main_info {
 	position: absolute;
 	left: 50%;
-	top: 25.8795vw;
+	top: 23.8795vw;
 	transform: translateX(-50%);
 }
 .pannel_i {
@@ -693,6 +693,39 @@ span, div:not(.form), img, svg, path, input {
 }
 .popout_earn .conf_color {
 	color: #F6ABA6;
+}
+.novalue_progress {
+	width: 45.3311vw;
+	height: 3.905vw;
+}
+.progress_lvl {
+	width: 25%;
+	height: 3.905vw;
+	overflow: hidden;
+	position: absolute;
+	border-radius: 0.6791vw;
+	filter: drop-shadow(0 0.849vw 3.905vw rgba(245, 170, 165, 0.35));
+}
+.progress_lvl svg {
+	width: 45.3311vw;
+	height: 3.905vw;
+}
+.flex_level {
+	padding-left: 2.0374vw;
+	padding-right: 2.0374vw;
+}
+.flex_level span {
+	font-size: 2.7165vw;
+	font-family: 'mEDIUM';
+}
+.flex_level span:first-child {
+	color: rgba(255, 255, 255, 0.5);
+}
+.level_wrapper {
+	gap: 1.3582vw;
+}
+.level_wrapper {
+	margin-bottom: 6.7912vw;
 }
 
 
