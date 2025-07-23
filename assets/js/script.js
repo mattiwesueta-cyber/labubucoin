@@ -185,46 +185,32 @@ class LabubuGame {
                 // Проверяем, есть ли last_active в данных
                 if (!data.last_active) {
                     console.log('No last_active time found, setting current server time');
+                    // Добавляем Z в конец для явного указания UTC
+                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
                     await this.db.savePlayerData(this.userId, {
                         ...data,
-                        last_active: timeData.serverTime
+                        last_active: utcTime
                     });
                     return; // Выходим, так как это первый вход
                 }
 
+                // Убеждаемся, что last_active в UTC формате
+                const lastActiveStr = data.last_active.endsWith('Z') ? data.last_active : data.last_active + 'Z';
+                
                 // Преобразуем оба времени в UTC миллисекунды
                 const serverDate = new Date(timeData.serverTime);
-                const lastActiveDate = new Date(data.last_active);
+                const lastActiveDate = new Date(lastActiveStr);
                 
                 // Получаем timestamp'ы в UTC
-                const now = Date.UTC(
-                    serverDate.getUTCFullYear(),
-                    serverDate.getUTCMonth(),
-                    serverDate.getUTCDate(),
-                    serverDate.getUTCHours(),
-                    serverDate.getUTCMinutes(),
-                    serverDate.getUTCSeconds(),
-                    serverDate.getUTCMilliseconds()
-                );
-
-                const lastActive = Date.UTC(
-                    lastActiveDate.getUTCFullYear(),
-                    lastActiveDate.getUTCMonth(),
-                    lastActiveDate.getUTCDate(),
-                    lastActiveDate.getUTCHours(),
-                    lastActiveDate.getUTCMinutes(),
-                    lastActiveDate.getUTCSeconds(),
-                    lastActiveDate.getUTCMilliseconds()
-                );
+                const now = serverDate.getTime(); // serverTime уже в UTC
+                const lastActive = lastActiveDate.getTime(); // теперь lastActive тоже в UTC
                 
                 // Отладочная информация
                 console.log('Time debug:', {
                     serverTime: timeData.serverTime,
-                    serverTimeUTC: new Date(now).toISOString(),
-                    lastActive: data.last_active,
-                    lastActiveUTC: new Date(lastActive).toISOString(),
-                    timezoneOffset: new Date().getTimezoneOffset(),
-                    rawDiffMs: now - lastActive
+                    lastActive: lastActiveStr,
+                    diffMs: now - lastActive,
+                    diffMinutes: (now - lastActive) / (60 * 1000)
                 });
 
                 let diffMs = now - lastActive;
@@ -286,9 +272,11 @@ class LabubuGame {
                                     this.coins += earned;
                                     this.updateUI();
                                     // Сохраняем все данные игрока с новым временем
+                                    // Убеждаемся, что сохраняем время в UTC
+                                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
                                     await this.db.savePlayerData(this.userId, {
                                         ...this.getPlayerDataForSave(),
-                                        last_active: timeData.serverTime
+                                        last_active: utcTime
                                     });
                                 }, 1000);
                             };
@@ -296,9 +284,11 @@ class LabubuGame {
                     }
                 } else {
                     // Просто обновляем last_active (если доход не начислялся)
+                    // Убеждаемся, что сохраняем время в UTC
+                    const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
                     await this.db.savePlayerData(this.userId, {
                         ...data,
-                        last_active: timeData.serverTime
+                        last_active: utcTime
                     });
                 }
             } catch (error) {
