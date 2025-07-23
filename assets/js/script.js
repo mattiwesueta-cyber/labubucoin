@@ -389,6 +389,7 @@ class LabubuGame {
                 }
             }
             accessories[category] = this.selectedAccessory.image;
+            this.accessories = accessories; // обязательно обновляем актуальные аксессуары
             // Сохраняем в БД только если accessories — объект
             if (accessories && typeof accessories === 'object') {
                 await this.db.savePlayerData(this.userId, this.getPlayerDataForSave());
