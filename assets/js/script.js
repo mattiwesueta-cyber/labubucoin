@@ -226,10 +226,7 @@ class LabubuGame {
                 // Если это первый вход или другие случаи, просто обновляем last_active
                 console.log('First login or no offline income needed, updating last_active');
                 const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                await this.db.savePlayerData(this.userId, {
-                    ...this.getPlayerDataForSave(),
-                    last_active: utcTime
-                });
+                await this.db.updateLastActive(this.userId, utcTime);
             }
             
             // ВСЕГДА обновляем UI в конце
@@ -322,10 +319,8 @@ class LabubuGame {
                                 // Сохраняем все данные игрока с новым временем
                                 // Убеждаемся, что сохраняем время в UTC
                                 const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                                await this.db.savePlayerData(this.userId, {
-                                    ...this.getPlayerDataForSave(),
-                                    last_active: utcTime
-                                });
+                                await this.db.updateLastActive(this.userId, utcTime);
+                                await this.db.updateBalance(this.userId, this.coins);
                             }, 1000);
                         };
                     }
@@ -334,10 +329,7 @@ class LabubuGame {
                 // Просто обновляем last_active (если доход не начислялся)
                 // Убеждаемся, что сохраняем время в UTC
                 const utcTime = timeData.serverTime.endsWith('Z') ? timeData.serverTime : timeData.serverTime + 'Z';
-                await this.db.savePlayerData(this.userId, {
-                    ...this.getPlayerDataForSave(),
-                    last_active: utcTime
-                });
+                await this.db.updateLastActive(this.userId, utcTime);
             }
         } catch (error) {
             console.error('Error in offline income calculation:', error);
@@ -586,13 +578,13 @@ class LabubuGame {
             console.log('Increased stable income by:', this.selectedAccessory.stableIncome);
             console.log('New stable income:', this.stableIncome);
             
-            // Сохраняем в БД
-            const saveData = this.getPlayerDataForSave();
-            console.log('Saving data to DB:', saveData);
+            // Безопасно сохраняем аксессуары и стабильный доход в БД
+            await this.db.updateAccessoriesAndIncome(this.userId, accessories, this.stableIncome);
             
-            await this.db.savePlayerData(this.userId, saveData);
-            
+            // Обновляем баланс отдельно
             this.coins = newBalance;
+            await this.db.updateBalance(this.userId, this.coins);
+            
             this.updateUI();
             
             // Отобразить аксессуар на главном персонаже сразу после покупки
@@ -748,13 +740,9 @@ class LabubuGame {
             return;
         }
         try {
-            const response = await fetch(`https://labubucoin.vercel.app/api/update-balance`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: this.userId, balance: this.coins })
-            });
-            const result = await response.json();
-            console.log('updateBalanceInDB: response', result);
+            // Используем новую безопасную функцию обновления баланса
+            const result = await this.db.updateBalance(this.userId, this.coins);
+            console.log('updateBalanceInDB: success =', result);
         } catch (e) {
             console.error('Ошибка обновления баланса в БД:', e);
         }
@@ -1104,14 +1092,11 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
                 const { serverTime } = await timeResponse.json();
-                await window.labubuGame.db.savePlayerData(window.labubuGame.userId, {
-                    ...window.labubuGame.getPlayerDataForSave(),
-                    last_active: serverTime
-                });
+                await window.labubuGame.db.updateLastActive(window.labubuGame.userId, serverTime);
             } catch (error) {
                 console.error('Error updating last_active:', error);
                 // В случае ошибки используем клиентское время как fallback
-                await window.labubuGame.db.savePlayerData(window.labubuGame.userId, window.labubuGame.getPlayerDataForSave());
+                await window.labubuGame.db.updateLastActive(window.labubuGame.userId, new Date().toISOString());
             }
         }
     }, 60 * 1000);
@@ -1122,14 +1107,11 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
                 const { serverTime } = await timeResponse.json();
-                await window.labubuGame.db.savePlayerData(window.labubuGame.userId, {
-                    ...window.labubuGame.getPlayerDataForSave(),
-                    last_active: serverTime
-                });
+                await window.labubuGame.db.updateLastActive(window.labubuGame.userId, serverTime);
             } catch (error) {
                 console.error('Error saving last_active on unload:', error);
                 // В случае ошибки используем клиентское время как fallback
-                await window.labubuGame.db.savePlayerData(window.labubuGame.userId, window.labubuGame.getPlayerDataForSave());
+                await window.labubuGame.db.updateLastActive(window.labubuGame.userId, new Date().toISOString());
             }
         }
     });
