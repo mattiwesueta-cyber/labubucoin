@@ -791,7 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🎮 LabubuCoin Game запущена!');
     setInterval(animateCircles, 2000);
     animateCircles();
-    renderAccessories();
+    // renderAccessories(); // убрано, если функции нет
 }); 
 
 document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {

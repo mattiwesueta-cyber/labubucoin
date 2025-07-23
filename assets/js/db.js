@@ -23,11 +23,11 @@ class GameDatabase {
                 .from('players')
                 .upsert({
                     tg_id: userId.toString(),
-                    balance: gameData.coins,
-                    stable_income: gameData.stableIncome,
-                    profit_per_click: gameData.profitPerClick,
-                    boost: gameData.boost,
-                    boost_time_left: gameData.boostTimeLeft,
+                    balance: Math.floor(gameData.coins),
+                    stable_income: Math.floor(gameData.stableIncome),
+                    profit_per_click: Math.floor(gameData.profitPerClick),
+                    boost: Math.floor(gameData.boost),
+                    boost_time_left: Math.floor(gameData.boostTimeLeft),
                     is_boost_active: gameData.isBoostActive,
                     costume: gameData.costume || null,
                     accessories: gameData.accessories ? JSON.stringify(gameData.accessories) : null,
