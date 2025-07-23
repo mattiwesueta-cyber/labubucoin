@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
     animateCircles();
 }); 
 
-document.querySelectorAll('.ctg_wrap').forEach(btn => {
+document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {
     btn.addEventListener('click', function() {
       // Скрыть все основные страницы
       document.querySelectorAll('.main_page, .upgrade_page').forEach(page => {
