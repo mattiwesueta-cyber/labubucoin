@@ -87,34 +87,54 @@ class GameDatabase {
     async loadPlayerData(userId, username = null) {
         if (!this.supabase) return null;
         try {
+            console.log('🔍 Searching for player with userId:', userId, 'type:', typeof userId);
+            
             let { data, error } = await this.supabase
                 .from('players')
                 .select('*')
                 .eq('tg_id', userId.toString())
                 .single();
+                
+            console.log('📊 Database query result:', { data, error });
+            
             if (error || !data) {
+                console.log('❌ Player not found, creating new player...');
+                console.log('Error details:', error);
+                
                 // Если игрока нет — создаём с дефолтными параметрами
                 const defaultData = {
                     tg_id: userId.toString(),
                     balance: 0,
-                    stable_income: 0,
+                    stable_income: 3.65, // Изменяю на базовое значение вместо 0
                     profit_per_click: 1,
                     boost: 2,
                     boost_time_left: 0,
                     is_boost_active: false,
                     costume: 'labubu.png',
                     username: username || null,
-                    last_updated: new Date().toISOString()
+                    last_updated: new Date().toISOString(),
+                    last_active: new Date().toISOString()
                 };
+                
+                console.log('📝 Creating new player with data:', defaultData);
+                
                 const { error: insertError } = await this.supabase
                     .from('players')
                     .insert([defaultData]);
+                    
                 if (insertError) {
                     console.error('❌ Ошибка создания игрока:', insertError);
                     return null;
                 }
+                
+                console.log('✅ New player created successfully');
                 return defaultData;
             }
+            
+            console.log('✅ Existing player found:', data);
+            console.log('💰 Player balance:', data.balance);
+            console.log('📈 Player stable_income:', data.stable_income);
+            
             return data;
         } catch (error) {
             console.error('❌ Ошибка загрузки данных:', error);

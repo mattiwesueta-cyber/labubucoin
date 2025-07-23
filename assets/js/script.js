@@ -64,7 +64,14 @@ class LabubuGame {
         try {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
                 const user = window.Telegram.WebApp.initDataUnsafe.user;
+                
+                console.log('📱 Telegram user data:', user);
+                console.log('🆔 User ID:', user.id, 'type:', typeof user.id);
+                console.log('👤 Username:', user.username);
+                
                 this.userId = user.id; // сохраняем userId
+                
+                console.log('💾 Saved userId to game:', this.userId);
                 // Устанавливаем аватар
                 const avatarImg = document.getElementById('tg_avatar');
                 if (avatarImg && user.photo_url) {
@@ -94,9 +101,13 @@ class LabubuGame {
 
     async loadPlayerDataFromDB(userId, username = null) {
         if (!this.db) return;
+        
+        console.log('🎮 Loading player data for userId:', userId, 'username:', username);
+        
         const data = await this.db.loadPlayerData(userId, username);
         if (data) {
-            console.log('Loaded player data from DB:', data);
+            console.log('📦 Received player data from DB:', data);
+            console.log('💰 Balance from DB:', data.balance, 'type:', typeof data.balance);
             
             // Проверка и исправление некорректных значений
             const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
