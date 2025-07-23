@@ -2,7 +2,7 @@
 class LabubuGame {
     constructor() {
         this.coins = 0;
-        this.stableIncome = 0;
+        this.stableIncome = 3.65; // возвращаем к изначальному значению
         this.profitPerClick = 1;
         this.boost = 0;
         this.boostTimeLeft = 0;
@@ -160,6 +160,17 @@ class LabubuGame {
 
                 let lastActive = new Date(data.last_active).getTime();
                 
+                // Проверка на будущую дату
+                if (lastActive > now) {
+                    console.error('Future date detected in last_active, resetting to current time');
+                    lastActive = now;
+                    await this.db.savePlayerData(this.userId, {
+                        ...data,
+                        last_active: timeData.serverTime
+                    });
+                    return; // Выходим, так как время было сброшено
+                }
+
                 // Отладочная информация
                 console.log('Time debug:', {
                     serverTime: timeData.serverTime,
@@ -177,6 +188,12 @@ class LabubuGame {
                     console.error('Negative time difference detected:', diffMs);
                     return; // Выходим, чтобы предотвратить неправильное начисление
                 }
+
+                // Проверка на слишком большую разницу во времени (больше суток)
+                if (diffMs > 24 * 60 * 60 * 1000) {
+                    console.warn('Time difference more than 24 hours, limiting to 24 hours');
+                    diffMs = 24 * 60 * 60 * 1000;
+                }
                 
                 let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
                 let earnMs = Math.min(diffMs, maxMs);
@@ -191,11 +208,17 @@ class LabubuGame {
 
                 if (earnMs > 60 * 1000) { // если больше 1 минуты
                     let minutes = Math.floor(earnMs / (60 * 1000)); // округляем минуты вниз
-                    let earned = this.stableIncome * minutes;
+                    
+                    // Проверка и ограничение stableIncome
+                    const maxStableIncome = 100; // максимальный доход в минуту
+                    const actualStableIncome = Math.min(this.stableIncome, maxStableIncome);
+                    
+                    let earned = actualStableIncome * minutes;
                     
                     console.log('Reward calculation:', {
                         minutes,
-                        stableIncome: this.stableIncome,
+                        originalStableIncome: this.stableIncome,
+                        actualStableIncome,
                         earned
                     });
 
