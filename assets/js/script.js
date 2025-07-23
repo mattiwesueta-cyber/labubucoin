@@ -70,6 +70,14 @@ class LabubuGame {
         if (!this.db) return;
         const data = await this.db.loadPlayerData(userId, username);
         if (data) {
+            // Парсим accessories, если это строка
+            if (data.accessories && typeof data.accessories === 'string') {
+                try {
+                    data.accessories = JSON.parse(data.accessories);
+                } catch (e) {
+                    data.accessories = {};
+                }
+            }
             this.coins = data.balance || 0;
             this.stableIncome = data.stable_income || 3.65;
             this.profitPerClick = data.profit_per_click || 1;
@@ -445,11 +453,11 @@ class LabubuGame {
 
     formatNumber(num) {
         if (num >= 1e9) {
-            return (Math.floor(num / 1e6) / 1000).toString() + 'B'; // 3 знака после запятой
+            return (Math.floor(num / 1e7) / 100).toString() + 'B'; // 2 знака после запятой
         } else if (num >= 1e6) {
-            return (Math.floor(num / 1e3) / 1000).toString() + 'M'; // 3 знака после запятой
+            return (Math.floor(num / 1e4) / 100).toString() + 'M'; // 2 знака после запятой
         } else if (num >= 1e3) {
-            return (Math.floor(num) / 1000).toString() + 'K'; // 3 знака после запятой
+            return (Math.floor(num / 10) / 100).toString() + 'K'; // 2 знака после запятой
         }
         return Math.floor(num).toString();
     }
