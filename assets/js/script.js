@@ -105,13 +105,6 @@ class LabubuGame {
                 data.last_active = timeData.serverTime;
                 needsUpdate = true;
             }
-            
-            // Проверка stableIncome
-            const maxStableIncome = 100;
-            if (data.stable_income > maxStableIncome) {
-                data.stable_income = 3.65; // Сброс к начальному значению
-                needsUpdate = true;
-            }
 
             // Если были найдены некорректные значения, обновляем данные
             if (needsUpdate) {
@@ -140,7 +133,7 @@ class LabubuGame {
             
             // ВАЖНО: Устанавливаем баланс ВСЕГДА, независимо от других проверок
             this.coins = data.balance || 0;
-            this.stableIncome = Math.min(data.stable_income || 3.65, maxStableIncome);
+            this.stableIncome = data.stable_income || 3.65; // Убираем все лимиты на stableIncome
             this.profitPerClick = data.profit_per_click || 1;
             this.boost = data.boost || 2;
             this.boostTimeLeft = data.boost_time_left || 0;
@@ -290,16 +283,12 @@ class LabubuGame {
             if (earnMs > 60 * 1000) { // если больше 1 минуты
                 let minutes = Math.floor(earnMs / (60 * 1000)); // округляем минуты вниз
                 
-                // Проверка и ограничение stableIncome
-                const maxStableIncome = 100; // максимальный доход в минуту
-                const actualStableIncome = Math.min(this.stableIncome, maxStableIncome);
-                
-                let earned = actualStableIncome * minutes;
+                // Используем полный stableIncome без ограничений
+                let earned = this.stableIncome * minutes;
                 
                 console.log('Offline reward calculation:', {
                     minutes,
-                    originalStableIncome: this.stableIncome,
-                    actualStableIncome,
+                    stableIncome: this.stableIncome,
                     earned,
                     minutesRaw: earnMs / (60 * 1000),
                     currentBalance: this.coins
@@ -1045,6 +1034,53 @@ class LabubuGame {
             console.error('UserId or DB not available');
         }
     }
+    
+    // Функция для отладки stable_income
+    async debugStableIncome() {
+        console.log('=== STABLE INCOME DEBUG ===');
+        console.log('Current local stable_income (this.stableIncome):', this.stableIncome);
+        console.log('UserId:', this.userId);
+        
+        // Проверяем данные в БД
+        if (this.userId && this.db) {
+            const data = await this.db.loadPlayerData(this.userId);
+            console.log('DB stable_income data:', data ? data.stable_income : 'NO DATA');
+            console.log('Full DB data:', data);
+            
+            if (data && data.stable_income !== this.stableIncome) {
+                console.warn('⚠️ STABLE INCOME MISMATCH!');
+                console.warn('Local stableIncome:', this.stableIncome);
+                console.warn('DB stable_income:', data.stable_income);
+            }
+        }
+        
+        // Проверяем элемент UI
+        const stableIncomeElement = document.querySelector('.flex_i span');
+        if (stableIncomeElement) {
+            console.log('UI shows stable income:', stableIncomeElement.textContent);
+        }
+        
+        console.log('=== END STABLE INCOME DEBUG ===');
+    }
+    
+    // Функция для принудительной синхронизации stable_income с БД
+    async forceSyncStableIncome() {
+        console.log('Force syncing stable_income with DB...');
+        if (this.userId && this.db) {
+            const data = await this.db.loadPlayerData(this.userId);
+            if (data) {
+                console.log('DB stable_income:', data.stable_income);
+                this.stableIncome = data.stable_income || 3.65;
+                console.log('Set local stable_income to:', this.stableIncome);
+                this.updateUI();
+                console.log('Stable income synced successfully');
+            } else {
+                console.error('No data found in DB');
+            }
+        } else {
+            console.error('UserId or DB not available');
+        }
+    }
 }
 
 
@@ -1091,12 +1127,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.forceRefreshAccessories = () => window.labubuGame.forceRefreshAccessories();
     window.debugBalance = () => window.labubuGame.debugBalance();
     window.forceSyncBalance = () => window.labubuGame.forceSyncBalance();
+    window.debugStableIncome = () => window.labubuGame.debugStableIncome();
+    window.forceSyncStableIncome = () => window.labubuGame.forceSyncStableIncome();
     
     console.log('🔧 Debug functions available:');
     console.log('- debugAccessories() - показать отладочную информацию об аксессуарах');
     console.log('- forceRefreshAccessories() - принудительно обновить отображение аксессуаров');
     console.log('- debugBalance() - показать отладочную информацию о балансе');
     console.log('- forceSyncBalance() - принудительно синхронизировать баланс с БД');
+    console.log('- debugStableIncome() - показать отладочную информацию о stable_income');
+    console.log('- forceSyncStableIncome() - принудительно синхронизировать stable_income с БД');
 
     // Обновление last_active каждую минуту
     setInterval(async () => {
