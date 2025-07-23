@@ -181,7 +181,6 @@ class LabubuGame {
                 // Получаем серверное время
                 const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
                 const timeData = await timeResponse.json();
-                const now = new Date(timeData.serverTime).getTime();
                 
                 // Проверяем, есть ли last_active в данных
                 if (!data.last_active) {
@@ -193,8 +192,21 @@ class LabubuGame {
                     return; // Выходим, так как это первый вход
                 }
 
-                // Конвертируем last_active в UTC
+                // Преобразуем оба времени в UTC миллисекунды
+                const serverDate = new Date(timeData.serverTime);
                 const lastActiveDate = new Date(data.last_active);
+                
+                // Получаем timestamp'ы в UTC
+                const now = Date.UTC(
+                    serverDate.getUTCFullYear(),
+                    serverDate.getUTCMonth(),
+                    serverDate.getUTCDate(),
+                    serverDate.getUTCHours(),
+                    serverDate.getUTCMinutes(),
+                    serverDate.getUTCSeconds(),
+                    serverDate.getUTCMilliseconds()
+                );
+
                 const lastActive = Date.UTC(
                     lastActiveDate.getUTCFullYear(),
                     lastActiveDate.getUTCMonth(),
@@ -208,10 +220,11 @@ class LabubuGame {
                 // Отладочная информация
                 console.log('Time debug:', {
                     serverTime: timeData.serverTime,
-                    serverTimestamp: now,
+                    serverTimeUTC: new Date(now).toISOString(),
                     lastActive: data.last_active,
                     lastActiveUTC: new Date(lastActive).toISOString(),
-                    timezoneOffset: new Date().getTimezoneOffset()
+                    timezoneOffset: new Date().getTimezoneOffset(),
+                    rawDiffMs: now - lastActive
                 });
 
                 let diffMs = now - lastActive;
@@ -235,8 +248,8 @@ class LabubuGame {
                     diffMs,
                     maxMs,
                     earnMs,
-                    diffMinutes: diffMs / (60 * 1000),
-                    earnMinutes: earnMs / (60 * 1000)
+                    diffMinutes: Math.floor(diffMs / (60 * 1000)), // округляем минуты вниз
+                    earnMinutes: Math.floor(earnMs / (60 * 1000))  // округляем минуты вниз
                 });
 
                 if (earnMs > 60 * 1000) { // если больше 1 минуты
@@ -252,7 +265,8 @@ class LabubuGame {
                         minutes,
                         originalStableIncome: this.stableIncome,
                         actualStableIncome,
-                        earned
+                        earned,
+                        minutesRaw: earnMs / (60 * 1000)
                     });
 
                     // Показываем попап
