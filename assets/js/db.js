@@ -30,6 +30,7 @@ class GameDatabase {
                     boost_time_left: gameData.boostTimeLeft,
                     is_boost_active: gameData.isBoostActive,
                     costume: gameData.costume || null,
+                    accessories: gameData.accessories || null,
                     last_updated: new Date().toISOString()
                 }, { onConflict: 'tg_id' });
             if (error) throw error;
