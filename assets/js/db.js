@@ -97,6 +97,23 @@ class GameDatabase {
             return false;
         }
     }
+
+    // Получить топ игроков по балансу
+    async getTopPlayers(limit = 10) {
+        if (!this.supabase) return [];
+        try {
+            const { data, error } = await this.supabase
+                .from('players')
+                .select('*')
+                .order('balance', { ascending: false })
+                .limit(limit);
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('❌ Ошибка получения топа игроков:', error);
+            return [];
+        }
+    }
 }
 
 // Экспортируем для использования в основном скрипте

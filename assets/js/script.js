@@ -26,6 +26,8 @@ class LabubuGame {
         this.updateUI();
         // Получаем данные пользователя через Telegram WebApp API
         await this.loadTelegramUser();
+        // Отображаем топ игроков
+        this.renderTopPlayers();
         // Искусственная задержка для лоадера
         await new Promise(r => setTimeout(r, 0));
         // Скрываем лоадер после полной загрузки
@@ -337,6 +339,77 @@ class LabubuGame {
             setTimeout(() => {
                 circleBg.style.transform = 'scale(1) translateZ(0)';
             }, 50);
+        }
+    }
+
+    async renderTopPlayers() {
+        if (!this.db) return;
+        const topPlayers = await this.db.getTopPlayers(10);
+        let currentUser = null;
+        if (this.userId) {
+            currentUser = await this.db.loadPlayerData(this.userId);
+        }
+        const list = document.getElementById('top_players_list');
+        if (!list) return;
+        list.innerHTML = '';
+        // Рендер топ-10
+        topPlayers.forEach((player, idx) => {
+            const medalClass = idx === 0 ? 'gold_pannel' : idx === 1 ? 'silver_pannel' : idx === 2 ? 'bronze_pannel' : '';
+            list.innerHTML += `
+                <div class="pannel_top w100 space alcn ${medalClass}">
+                    <div class="numb_pos">#${idx + 1}</div>
+                    <div class="left_top alcn">
+                        <img src="assets/images/${player.costume || ''}" alt="">
+                        <div class="row_top clmn">
+                            <span>Username:</span>
+                            <span>${player.username ? '@' + player.username : 'Player'}</span>
+                        </div>
+                    </div>
+                    <div class="right_top alcn">
+                        <div class="row_top_right coins_row clmn">
+                            <span>Coins:</span>
+                            <span>${this.formatNumber(player.balance)}</span>
+                        </div>
+                        <div class="row_top_right stableincome_row clmn">
+                            <span>Stable income:</span>
+                            <span>+${this.formatNumber(player.stable_income)}</span>
+                        </div>
+                        <div class="row_top_right referals_row clmn">
+                            <span>Referals:</span>
+                            <span>${player.referals || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        // Рендер текущего пользователя, если его нет в топ-10
+        if (currentUser && !topPlayers.some(p => p.tg_id == currentUser.tg_id)) {
+            list.innerHTML += `
+                <div class="pannel_top w100 space alcn">
+                    <div class="numb_pos">You</div>
+                    <div class="left_top alcn">
+                        <img src="assets/images/${currentUser.costume || ''}" alt="">
+                        <div class="row_top clmn">
+                            <span>Username:</span>
+                            <span>${currentUser.username ? '@' + currentUser.username : 'Player'}</span>
+                        </div>
+                    </div>
+                    <div class="right_top alcn">
+                        <div class="row_top_right coins_row clmn">
+                            <span>Coins:</span>
+                            <span>${this.formatNumber(currentUser.balance)}</span>
+                        </div>
+                        <div class="row_top_right stableincome_row clmn">
+                            <span>Stable income:</span>
+                            <span>+${this.formatNumber(currentUser.stable_income)}</span>
+                        </div>
+                        <div class="row_top_right referals_row clmn">
+                            <span>Referals:</span>
+                            <span>${currentUser.referals || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
     }
 }

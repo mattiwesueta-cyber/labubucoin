@@ -566,6 +566,23 @@ span, div:not(.form), img, svg, path, input {
 	color: #FFF1B8;
 }
 
+.pannel_top {
+	position: relative;
+	overflow: hidden;
+}
+
+.numb_pos {
+	position: absolute;
+	left: 0;
+	color: white;
+	font-size: 17.9966vw;
+	font-family: 'Travels';
+	mix-blend-mode: overlay;
+	opacity: 0.1;
+}
+.left_top, .right_top {
+	position: relative;
+}
 
 
 
