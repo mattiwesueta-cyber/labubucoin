@@ -31,6 +31,7 @@ class GameDatabase {
                     is_boost_active: gameData.isBoostActive,
                     costume: gameData.costume || null,
                     accessories: gameData.accessories ? JSON.stringify(gameData.accessories) : null,
+                    last_active: gameData.last_active || new Date().toISOString(),
                     last_updated: new Date().toISOString()
                 }, { onConflict: 'tg_id' });
             if (error) throw error;

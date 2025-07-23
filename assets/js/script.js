@@ -92,7 +92,6 @@ class LabubuGame {
             }
             // Подгружаем аксессуары, если есть
             if (data.accessories) {
-                // Ожидается, что accessories = { hat: url, shoes: url, bag: url, ... }
                 const hatImg = document.getElementById('hat');
                 const shoesImg = document.getElementById('shoes');
                 const bagImg = document.getElementById('bag');
@@ -124,6 +123,48 @@ class LabubuGame {
             // Проверяем, не истек ли буст
             if (this.isBoostActive && this.boostTimeLeft <= 0) {
                 this.isBoostActive = false;
+            }
+            // === Оффлайн доход ===
+            const now = Date.now();
+            let lastActive = data.last_active ? new Date(data.last_active).getTime() : now;
+            let diffMs = now - lastActive;
+            let maxMs = 4 * 60 * 60 * 1000; // 4 часа в мс
+            let earnMs = Math.min(diffMs, maxMs);
+            if (earnMs > 60 * 1000) { // если больше 1 минуты
+                let hours = earnMs / (60 * 60 * 1000);
+                let earned = this.stableIncome * hours;
+                // Показываем попап
+                const popoutEarn = document.querySelector('.popout_earn');
+                if (popoutEarn) {
+                    popoutEarn.style.display = 'flex';
+                    const earnCoinsSpan = document.getElementById('earn_coins');
+                    if (earnCoinsSpan) earnCoinsSpan.textContent = this.formatNumber(earned);
+                    const pickupBtn = document.getElementById('pickup_coins');
+                    if (pickupBtn) {
+                        pickupBtn.onclick = async () => {
+                            // Анимация скрытия попапа
+                            popoutEarn.classList.add('hidepopout');
+                            setTimeout(async () => {
+                                popoutEarn.style.display = 'none';
+                                popoutEarn.classList.remove('hidepopout');
+                                this.coins += earned;
+                                this.updateUI();
+                                // Сохраняем новый баланс и last_active
+                                await this.db.savePlayerData(this.userId, {
+                                    ...data,
+                                    coins: this.coins,
+                                    last_active: new Date().toISOString()
+                                });
+                            }, 1000);
+                        };
+                    }
+                }
+            } else {
+                // Просто обновляем last_active
+                await this.db.savePlayerData(this.userId, {
+                    ...data,
+                    last_active: new Date().toISOString()
+                });
             }
             this.updateUI();
         }
