@@ -133,6 +133,7 @@ class LabubuGame {
             if (earnMs > 60 * 1000) { // если больше 1 минуты
                 let minutes = earnMs / (60 * 1000); // stableIncome в минуту
                 let earned = this.stableIncome * minutes;
+                console.log('AFK: earnMs=', earnMs, 'minutes=', minutes, 'earned=', earned, 'lastActive=', lastActive, 'now=', now);
                 // Показываем попап
                 const popoutEarn = document.querySelector('.popout_earn');
                 if (popoutEarn) {
@@ -149,7 +150,7 @@ class LabubuGame {
                                 popoutEarn.classList.remove('hidepopout');
                                 this.coins += earned;
                                 this.updateUI();
-                                // Сохраняем новый баланс и last_active
+                                // Сохраняем новый баланс и last_active только после получения дохода
                                 await this.db.savePlayerData(this.userId, {
                                     ...data,
                                     coins: this.coins,
@@ -160,7 +161,7 @@ class LabubuGame {
                     }
                 }
             } else {
-                // Просто обновляем last_active
+                // Просто обновляем last_active (если доход не начислялся)
                 await this.db.savePlayerData(this.userId, {
                     ...data,
                     last_active: new Date().toISOString()
