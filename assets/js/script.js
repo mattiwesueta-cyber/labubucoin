@@ -154,7 +154,7 @@ class LabubuGame {
                                 await this.db.savePlayerData(this.userId, {
                                     ...data,
                                     coins: this.coins,
-                                    last_active: new Date().toISOString()
+                                    last_active: new Date().toISOString() // обязательно последним!
                                 });
                             }, 1000);
                         };
