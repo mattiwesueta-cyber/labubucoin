@@ -26,15 +26,21 @@ class LabubuGame {
     }
 
     // Инициализация системы уровней
-    initLevelsSystem() {
+    async initLevelsSystem() {
         // Ждем загрузки конфига уровней
-        if (!window.LevelsConfig) {
-            setTimeout(() => this.initLevelsSystem(), 100);
-            return;
-        }
-        
-        this.levelsConfig = window.LevelsConfig;
-        console.log('🎮 Levels system initialized with config');
+        return new Promise((resolve) => {
+            const checkConfig = () => {
+                if (window.LevelsConfig) {
+                    this.levelsConfig = window.LevelsConfig;
+                    console.log('🎮 Levels system initialized with config');
+                    resolve();
+                } else {
+                    console.log('⏳ Waiting for levels config...');
+                    setTimeout(checkConfig, 100);
+                }
+            };
+            checkConfig();
+        });
     }
 
     // Вычисление уровня игрока на основе баланса
@@ -80,30 +86,36 @@ class LabubuGame {
         
         const levelData = this.calculateLevel();
         const progressElement = document.getElementById('progress_value');
-        const levelSpans = document.querySelectorAll('.flex_level span');
+        const rankElement = document.getElementById('level_rank');
+        const progressTextElement = document.getElementById('level_progress');
         
         // Обновляем ширину прогресс-бара от 0 до 100%
         if (progressElement) {
             progressElement.style.width = `${levelData.progress}%`;
+            console.log('🎨 Progress bar updated to:', levelData.progress.toFixed(1) + '%');
         }
         
-        // Обновляем текст уровня
-        if (levelSpans.length >= 2 && levelData.levelInfo) {
+        // Обновляем текст ранга и уровня
+        if (rankElement && levelData.levelInfo) {
             const rankInfo = this.levelsConfig.getRankByCoins(this.coins);
-            levelSpans[0].textContent = `${rankInfo.icon} ${rankInfo.name}`;
-            
-            // Показываем прогресс XP
+            rankElement.textContent = `${rankInfo.icon} ${rankInfo.name}`;
+            console.log('🏆 Rank updated to:', `${rankInfo.icon} ${rankInfo.name}`);
+        }
+        
+        // Обновляем прогресс XP
+        if (progressTextElement && levelData.levelInfo) {
             if (levelData.level >= this.levelsConfig.levels.length) {
-                levelSpans[1].textContent = 'MAX LEVEL';
+                progressTextElement.textContent = 'MAX LEVEL';
             } else if (levelData.nextLevelInfo) {
                 const currentLevelStartXP = levelData.levelInfo.totalXpRequired - levelData.levelInfo.xpRequired;
                 const xpInCurrentLevel = levelData.currentXp - currentLevelStartXP;
                 const xpNeededForLevel = levelData.levelInfo.xpRequired;
                 
-                levelSpans[1].textContent = `${Math.max(0, xpInCurrentLevel)}/${xpNeededForLevel}`;
+                progressTextElement.textContent = `${Math.max(0, xpInCurrentLevel)}/${xpNeededForLevel}`;
             } else {
-                levelSpans[1].textContent = `${levelData.currentXp}/${levelData.levelInfo.totalXpRequired}`;
+                progressTextElement.textContent = `${levelData.currentXp}/${levelData.levelInfo.totalXpRequired}`;
             }
+            console.log('📊 Progress text updated to:', progressTextElement.textContent);
         }
         
         // Сохраняем уровень в БД, если он изменился (сравниваем со старым уровнем)
@@ -251,8 +263,8 @@ class LabubuGame {
         }
         this.db = new window.GameDatabase(); // Инициализируем db
         
-        // Инициализируем систему уровней
-        this.initLevelsSystem();
+        // Инициализируем систему уровней и ЖДЕМ её завершения
+        await this.initLevelsSystem();
         
         this.setupEventListeners();
         this.updateUI();
@@ -1499,7 +1511,11 @@ class LabubuGame {
     // Принудительное обновление уровня (для синхронизации с балансом)
     forceUpdateLevel() {
         if (!this.levelsConfig) {
-            console.log('⏳ Levels config not ready, will update level later');
+            console.log('⏳ Levels config not ready, will retry in 1 second...');
+            // Повторяем попытку через 1 секунду
+            setTimeout(() => {
+                this.forceUpdateLevel();
+            }, 1000);
             return;
         }
         
@@ -1530,6 +1546,8 @@ class LabubuGame {
             console.log('✅ Level force updated successfully');
         } else {
             console.log('✅ Level is already up to date');
+            // Все равно обновляем UI для корректного отображения
+            this.updateLevelProgressBar();
         }
     }
 }
@@ -1706,6 +1724,250 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('- debugOnlineIncome() - показать отладочную информацию о состоянии онлайн дохода');
     console.log('- forceSaveBalance() - принудительно сохранить текущий баланс в БД');
     console.log('- forceUpdateLevel() - принудительно обновить уровень');
+    console.log('- testLevelsDisplay() - протестировать отображение уровней');
+    console.log('🆙 LEVEL SYSTEM:');
+    console.log('- debugLevels() - показать информацию о текущем уровне');
+    console.log('- setTestBalance(amount) - установить тестовый баланс');
+    console.log('- testLevelProgression() - протестировать прогрессию уровней');
+    console.log('- showLevelsConfig() - показать конфигурацию всех уровней');
+    console.log('- showRanksInfo() - показать информацию о рангах');
+    console.log('- findLevelByXP(xp) - найти уровень по количеству XP');
+
+    // Обновление last_active каждую минуту
+    setInterval(async () => {
+        if (window.labubuGame && window.labubuGame.userId && window.labubuGame.db) {
+            try {
+                const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
+                const { serverTime } = await timeResponse.json();
+                await window.labubuGame.db.updateLastActive(window.labubuGame.userId, serverTime);
+            } catch (error) {
+                console.error('Error updating last_active:', error);
+                // В случае ошибки используем клиентское время как fallback
+                await window.labubuGame.db.updateLastActive(window.labubuGame.userId, new Date().toISOString());
+            }
+        }
+    }, 60 * 1000);
+
+    // Надёжное сохранение last_active при выходе
+    window.addEventListener('beforeunload', async (e) => {
+        if (window.labubuGame && window.labubuGame.userId && window.labubuGame.db) {
+            // Останавливаем онлайн доход и сохраняем финальный баланс
+            window.labubuGame.setOnlineStatus(false);
+            
+            try {
+                const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
+                const { serverTime } = await timeResponse.json();
+                await window.labubuGame.db.updateLastActive(window.labubuGame.userId, serverTime);
+            } catch (error) {
+                console.error('Error saving last_active on unload:', error);
+                // В случае ошибки используем клиентское время как fallback
+                await window.labubuGame.db.updateLastActive(window.labubuGame.userId, new Date().toISOString());
+            }
+        }
+    });
+
+    // Отслеживание видимости вкладки для пауз онлайн дохода
+    document.addEventListener('visibilitychange', () => {
+        if (window.labubuGame) {
+            if (document.hidden) {
+                // Вкладка скрыта - останавливаем онлайн доход
+                console.log('🔇 Tab hidden, pausing online income');
+                window.labubuGame.setOnlineStatus(false);
+            } else {
+                // Вкладка видима - возобновляем онлайн доход
+                console.log('👁️ Tab visible, resuming online income');
+                window.labubuGame.setOnlineStatus(true);
+            }
+        }
+    });
+
+    // Отслеживание фокуса окна
+    window.addEventListener('focus', () => {
+        if (window.labubuGame) {
+            console.log('🎯 Window focused, resuming online income');
+            window.labubuGame.setOnlineStatus(true);
+        }
+    });
+
+    window.addEventListener('blur', () => {
+        if (window.labubuGame) {
+            console.log('😴 Window blurred, pausing online income');
+            window.labubuGame.setOnlineStatus(false);
+        }
+    });
+});
+
+document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Скрыть все основные страницы
+      document.querySelectorAll('.main_page, .upgrade_page, .top_page').forEach(page => {
+        page.style.display = 'none';
+      });
+      // Показать нужную
+      const target = this.dataset.target;
+      const page = document.querySelector('.' + target);
+      if (page) page.style.display = '';
+      // Подсветить активную иконку
+      document.querySelectorAll('.ctg_wrap').forEach(b => b.classList.remove('selected_ctg'));
+      this.classList.add('selected_ctg');
+    });
+  });
+    window.testLevelsDisplay = () => {
+        const game = window.labubuGame;
+        
+        console.log('🧪 Testing levels display...');
+        console.log('Current game state:', {
+            coins: game.coins,
+            currentLevel: game.currentLevel,
+            levelsConfig: !!game.levelsConfig,
+            userId: game.userId,
+            db: !!game.db
+        });
+        
+        // Проверяем элементы DOM
+        const progressElement = document.getElementById('progress_value');
+        const rankElement = document.getElementById('level_rank');
+        const progressTextElement = document.getElementById('level_progress');
+        
+        console.log('DOM elements:', {
+            progressElement: !!progressElement,
+            rankElement: !!rankElement,
+            progressTextElement: !!progressTextElement
+        });
+        
+        if (progressElement) console.log('Progress element width:', progressElement.style.width);
+        if (rankElement) console.log('Rank element text:', rankElement.textContent);
+        if (progressTextElement) console.log('Progress text:', progressTextElement.textContent);
+        
+        // Принудительно обновляем отображение
+        if (game.levelsConfig) {
+            game.updateLevelProgressBar();
+            console.log('✅ Level display updated!');
+        } else {
+            console.log('❌ Levels config not available');
+        }
+    };
+    
+    // Функции отладки системы уровней
+    window.debugLevels = () => {
+        const game = window.labubuGame;
+        if (!game.levelsConfig) {
+            console.log('❌ Levels config not loaded yet');
+            return;
+        }
+        
+        const levelData = game.calculateLevel();
+        const rankInfo = game.levelsConfig.getRankByCoins(game.coins);
+        
+        console.log('=== LEVELS DEBUG ===');
+        console.log('Current balance (XP):', game.coins);
+        console.log('Current level:', levelData.level);
+        console.log('Progress:', levelData.progress.toFixed(2) + '%');
+        console.log('XP to next level:', levelData.xpToNextLevel);
+        console.log('Rank:', rankInfo.name, rankInfo.icon);
+        console.log('Title:', levelData.levelInfo?.title);
+        console.log('Level info:', levelData.levelInfo);
+        console.log('Level requirements (first 10):', game.levelsConfig.levels.slice(0, 10));
+        console.log('=== END LEVELS DEBUG ===');
+    };
+    
+    window.setTestBalance = (amount) => {
+        const game = window.labubuGame;
+        game.coins = amount;
+        game.updateUI();
+        console.log('💰 Set test balance to:', amount);
+        if (game.userId && game.db) {
+            game.db.updateBalance(game.userId, amount);
+        }
+    };
+    
+    window.testLevelProgression = () => {
+        const testBalances = [0, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
+        let index = 0;
+        
+        const testNext = () => {
+            if (index < testBalances.length) {
+                window.setTestBalance(testBalances[index]);
+                window.debugLevels();
+                index++;
+                setTimeout(testNext, 2000); // 2 секунды между тестами
+            } else {
+                console.log('🏁 Level progression test completed!');
+            }
+        };
+        
+        console.log('🧪 Starting level progression test...');
+        testNext();
+    };
+    
+    // Новые функции отладки для конфига уровней
+    window.showLevelsConfig = () => {
+        if (!window.LevelsConfig) {
+            console.log('❌ Levels config not available');
+            return;
+        }
+        
+        console.log('=== LEVELS CONFIG ===');
+        console.log('Total levels:', window.LevelsConfig.levels.length);
+        console.log('Total ranks:', window.LevelsConfig.ranks.length);
+        console.log('Max XP needed:', window.LevelsConfig.levels[window.LevelsConfig.levels.length - 1]?.totalXpRequired);
+        console.log('Max coins for highest rank:', window.LevelsConfig.ranks[window.LevelsConfig.ranks.length - 1]?.requiredCoins);
+        console.log('First 20 levels:', window.LevelsConfig.levels.slice(0, 20));
+        console.log('Last 10 levels:', window.LevelsConfig.levels.slice(-10));
+        console.log('=== END CONFIG ===');
+    };
+    
+    window.showRanksInfo = () => {
+        if (!window.LevelsConfig) {
+            console.log('❌ Levels config not available');
+            return;
+        }
+        
+        console.log('=== RANKS INFO ===');
+        window.LevelsConfig.ranks.forEach((rank, index) => {
+            console.log(`${index + 1}. ${rank.icon} ${rank.name}:`, {
+                requiredCoins: rank.requiredCoins.toLocaleString(),
+                reward: rank.reward,
+                color: rank.color,
+                description: rank.description
+            });
+        });
+        console.log('=== END RANKS ===');
+    };
+    
+    window.findLevelByXP = (xp) => {
+        if (!window.LevelsConfig) {
+            console.log('❌ Levels config not available');
+            return;
+        }
+        
+        const level = window.LevelsConfig.getLevelByTotalXP(xp);
+        const progress = window.LevelsConfig.getLevelProgress(xp);
+        const levelInfo = window.LevelsConfig.getLevelInfo(level);
+        const rankInfo = window.LevelsConfig.getRankByCoins(xp);
+        const rankProgress = window.LevelsConfig.getRankProgress(xp);
+        
+        console.log(`💰 XP/Coins: ${xp} → Level: ${level}`);
+        console.log(`🏆 ${rankInfo.icon} ${rankInfo.name} - ${levelInfo?.title}`);
+        console.log(`📊 Rank progress: ${rankProgress.toFixed(1)}%`);
+        console.log(`📊 Progress: ${progress.toFixed(2)}%`);
+        console.log(`📈 Level info:`, levelInfo);
+    };
+    
+    console.log('🔧 Debug functions available:');
+    console.log('- debugAccessories() - показать отладочную информацию об аксессуарах');
+    console.log('- forceRefreshAccessories() - принудительно обновить отображение аксессуаров');
+    console.log('- debugBalance() - показать отладочную информацию о балансе');
+    console.log('- forceSyncBalance() - принудительно синхронизировать баланс с БД');
+    console.log('- debugStableIncome() - показать отладочную информацию о stable_income');
+    console.log('- forceSyncStableIncome() - принудительно синхронизировать stable_income с БД');
+    console.log('- startOnlineIncome() - запустить автоматическое начисление онлайн дохода');
+    console.log('- stopOnlineIncome() - остановить автоматическое начисление онлайн дохода');
+    console.log('- setOnlineStatus(true/false) - установить статус онлайн/оффлайн');
+    console.log('- debugOnlineIncome() - показать отладочную информацию о состоянии онлайн дохода');
+    console.log('- forceSaveBalance() - принудительно сохранить текущий баланс в БД');
+    console.log('- forceUpdateLevel() - принудительно обновить уровень');
+    console.log('- testLevelsDisplay() - протестировать отображение уровней');
     console.log('🆙 LEVEL SYSTEM:');
     console.log('- debugLevels() - показать информацию о текущем уровне');
     console.log('- setTestBalance(amount) - установить тестовый баланс');
