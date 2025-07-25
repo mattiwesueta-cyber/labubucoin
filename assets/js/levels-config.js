@@ -328,7 +328,7 @@ class LevelsConfig {
     }
 
     // Награды за достижение уровня
-    getLevelRewards(level, totalXpRequired) {
+    getLevelRewards(level, totalXpRequired, allLevels = null) {
         const rewards = [];
         const currentRank = this.getRankByCoins(totalXpRequired);
         
@@ -342,8 +342,8 @@ class LevelsConfig {
         }
         
         // Награды за достижение нового ранга
-        if (level > 1) {
-            const previousTotalXP = this.levels[level - 2]?.totalXpRequired || 0;
+        if (level > 1 && allLevels) {
+            const previousTotalXP = allLevels[level - 2]?.totalXpRequired || 0;
             const previousRank = this.getRankByCoins(previousTotalXP);
             
             // Если ранг изменился, даем награду за новый ранг
