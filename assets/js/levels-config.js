@@ -3,8 +3,10 @@ console.log('📋 Starting to load levels-config.js...');
 
 class LevelsConfig {
     constructor() {
-        this.levels = this.generateLevelsConfig();
+        // ВАЖНО: сначала инициализируем ranks, потом levels
+        // так как generateLevelsConfig() использует getRankByCoins()
         this.ranks = this.generateRanksConfig();
+        this.levels = this.generateLevelsConfig();
     }
 
     // Генерация конфигурации уровней
