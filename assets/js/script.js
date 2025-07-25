@@ -2038,20 +2038,3 @@ document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {
             window.labubuGame.setOnlineStatus(false);
         }
     });
-});
-
-document.querySelectorAll('.ctg_wrap, #upgrade_buttton_page').forEach(btn => {
-    btn.addEventListener('click', function() {
-      // Скрыть все основные страницы
-      document.querySelectorAll('.main_page, .upgrade_page, .top_page').forEach(page => {
-        page.style.display = 'none';
-      });
-      // Показать нужную
-      const target = this.dataset.target;
-      const page = document.querySelector('.' + target);
-      if (page) page.style.display = '';
-      // Подсветить активную иконку
-      document.querySelectorAll('.ctg_wrap').forEach(b => b.classList.remove('selected_ctg'));
-      this.classList.add('selected_ctg');
-    });
-  });
