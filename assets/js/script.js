@@ -27,20 +27,52 @@ class LabubuGame {
 
     // Инициализация системы уровней
     async initLevelsSystem() {
+        console.log('🔄 Starting levels system initialization...');
+        console.log('🔍 Checking if window object exists:', !!window);
+        console.log('🔍 Available window properties:', Object.keys(window).filter(key => key.includes('Level') || key.includes('Config')));
+        
         // Ждем загрузки конфига уровней
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 100; // 10 seconds maximum wait
+            
             const checkConfig = () => {
+                attempts++;
+                console.log(`⏳ Waiting for levels config... (attempt ${attempts}/${maxAttempts})`);
+                
                 if (window.LevelsConfig) {
                     this.levelsConfig = window.LevelsConfig;
                     console.log('🎮 Levels system initialized with config');
+                    console.log('📊 Config details:', {
+                        levels: this.levelsConfig.levels?.length,
+                        ranks: this.levelsConfig.ranks?.length
+                    });
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    console.error('❌ Failed to load levels config after maximum attempts');
+                    // Create a fallback config to prevent the app from breaking
+                    this.createFallbackLevelsConfig();
                     resolve();
                 } else {
-                    console.log('⏳ Waiting for levels config...');
                     setTimeout(checkConfig, 100);
                 }
             };
             checkConfig();
         });
+    }
+
+    // Создание резервной конфигурации уровней
+    createFallbackLevelsConfig() {
+        console.log('🛠️ Creating fallback levels config...');
+        this.levelsConfig = {
+            levels: [{ level: 1, totalXpRequired: 0, rank: 'Bronze 1', rankColor: '#CD7F32' }],
+            ranks: [{ id: 'bronze_1', name: 'Bronze 1', requiredCoins: 0, color: '#CD7F32' }],
+            getLevelByTotalXP: (xp) => 1,
+            getLevelProgress: (xp) => 0,
+            getRankByCoins: (coins) => ({ id: 'bronze_1', name: 'Bronze 1', requiredCoins: 0, color: '#CD7F32' }),
+            getLevelInfo: (level) => ({ level: 1, totalXpRequired: 0, rank: 'Bronze 1', rankColor: '#CD7F32' })
+        };
+        console.log('✅ Fallback levels config created');
     }
 
     // Вычисление уровня игрока на основе баланса

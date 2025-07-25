@@ -1,4 +1,6 @@
 // 🎮 LabubuCoin - Конфигурация системы уровней
+console.log('📋 Starting to load levels-config.js...');
+
 class LevelsConfig {
     constructor() {
         this.levels = this.generateLevelsConfig();
@@ -465,11 +467,17 @@ class LevelsConfig {
 }
 
 // Создаем глобальный экземпляр конфигурации
-window.LevelsConfig = new LevelsConfig();
-
-console.log('🎮 Levels Config loaded!');
-console.log('📊 Total levels:', window.LevelsConfig.levels.length);
-console.log('🏆 Total ranks:', window.LevelsConfig.ranks.length);
-console.log('💎 Max XP required:', window.LevelsConfig.levels[window.LevelsConfig.levels.length - 1]?.totalXpRequired);
-console.log('👑 Highest rank:', window.LevelsConfig.ranks[window.LevelsConfig.ranks.length - 1]?.name);
-console.log('💰 Max coins for highest rank:', window.LevelsConfig.ranks[window.LevelsConfig.ranks.length - 1]?.requiredCoins); 
+console.log('🔧 Creating LevelsConfig instance...');
+try {
+    window.LevelsConfig = new LevelsConfig();
+    console.log('✅ LevelsConfig instance created successfully!');
+    console.log('🎮 Levels Config loaded!');
+    console.log('📊 Total levels:', window.LevelsConfig.levels.length);
+    console.log('🏆 Total ranks:', window.LevelsConfig.ranks.length);
+    console.log('💎 Max XP required:', window.LevelsConfig.levels[window.LevelsConfig.levels.length - 1]?.totalXpRequired);
+    console.log('👑 Highest rank:', window.LevelsConfig.ranks[window.LevelsConfig.ranks.length - 1]?.name);
+    console.log('💰 Max coins for highest rank:', window.LevelsConfig.ranks[window.LevelsConfig.ranks.length - 1]?.requiredCoins);
+} catch (error) {
+    console.error('❌ Error creating LevelsConfig instance:', error);
+    console.error('📍 Stack trace:', error.stack);
+} 
