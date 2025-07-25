@@ -118,6 +118,7 @@ class GameDatabase {
                     is_boost_active: false,
                     costume: 'labubu.png',
                     username: username || null,
+                    player_level: 1, // Устанавливаем начальный уровень
                     last_updated: new Date().toISOString(),
                     last_active: new Date().toISOString()
                 };
@@ -276,6 +277,26 @@ class GameDatabase {
             return true;
         } catch (error) {
             console.error('❌ Ошибка обновления костюма:', error);
+            return false;
+        }
+    }
+    
+    // Безопасное обновление уровня игрока
+    async updatePlayerLevel(userId, level) {
+        if (!this.supabase) return false;
+        try {
+            const { error } = await this.supabase
+                .from('players')
+                .update({ 
+                    player_level: level,
+                    last_updated: new Date().toISOString()
+                })
+                .eq('tg_id', userId.toString());
+            if (error) throw error;
+            console.log('Player level updated successfully:', level);
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка обновления уровня игрока:', error);
             return false;
         }
     }

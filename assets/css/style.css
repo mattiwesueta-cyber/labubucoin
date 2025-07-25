@@ -705,6 +705,7 @@ span, div:not(.form), img, svg, path, input {
 	position: absolute;
 	border-radius: 0.6791vw;
 	filter: drop-shadow(0 0.849vw 3.905vw rgba(245, 170, 165, 0.35));
+	transition: width 0.5s ease-out;
 }
 .progress_lvl svg {
 	width: 45.3311vw;
