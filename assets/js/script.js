@@ -282,10 +282,35 @@ class LabubuGame {
         return data;
     }
 
+    // Получение реферального кода из URL
+    getReferralCode() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref') || urlParams.get('referral');
+            
+            // Также проверяем Telegram WebApp start parameter
+            if (window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
+                const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
+                if (startParam.startsWith('ref_')) {
+                    return startParam.substring(4); // Убираем префикс 'ref_'
+                }
+            }
+            
+            console.log('🔗 Referral code from URL:', refCode);
+            return refCode;
+        } catch (error) {
+            console.error('❌ Error getting referral code:', error);
+            return null;
+        }
+    }
+
     async init() {
         // Показываем лоадер
         const loader = document.querySelector('.load_bg');
         if (loader) loader.style.display = '';
+        
+        // Получаем реферальный код из URL
+        this.referralCode = this.getReferralCode();
         
         // Ждем инициализации supabase (база данных уже создана в конструкторе)
         while (!window.GameDatabase) { // Исправляем на window.GameDatabase
@@ -304,6 +329,8 @@ class LabubuGame {
         this.renderTopPlayers();
         // Отображаем реферальные ранги
         this.renderReferralRanks();
+        // Отображаем реальных рефералов игрока
+        this.renderPlayerReferrals();
         // Искусственная задержка для лоадера
         await new Promise(r => setTimeout(r, 0));
         // Скрываем лоадер после полной загрузки
@@ -333,8 +360,8 @@ class LabubuGame {
                 if (userElement) {
                     userElement.textContent = user.username ? `@${user.username}` : user.first_name;
                 }
-                // Загружаем все игровые данные из Supabase, передавая username
-                await this.loadPlayerDataFromDB(user.id, user.username);
+                // Загружаем все игровые данные из Supabase, передавая username и реферальный код
+                await this.loadPlayerDataFromDB(user.id, user.username, this.referralCode);
             } else {
                 if (retry < 5) {
                     setTimeout(() => this.loadTelegramUser(retry + 1), 400);
@@ -349,12 +376,12 @@ class LabubuGame {
         }
     }
 
-    async loadPlayerDataFromDB(userId, username = null) {
+    async loadPlayerDataFromDB(userId, username = null, referralCode = null) {
         if (!this.db) return;
         
-        console.log('🎮 Loading player data for userId:', userId, 'username:', username);
+        console.log('🎮 Loading player data for userId:', userId, 'username:', username, 'referralCode:', referralCode);
         
-        const data = await this.db.loadPlayerData(userId, username);
+        const data = await this.db.loadPlayerData(userId, username, referralCode);
         if (data) {
             console.log('📦 Received player data from DB:', data);
             console.log('💰 Balance from DB:', data.balance, 'type:', typeof data.balance);
@@ -745,6 +772,61 @@ class LabubuGame {
                 }
             });
         });
+
+        // Обработчик для кнопки invite friends
+        const inviteBtn = document.getElementById('invite_frinds');
+        if (inviteBtn) {
+            inviteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.shareReferralLink();
+            });
+        }
+    }
+
+    // Отправка реферальной ссылки в Telegram
+    async shareReferralLink() {
+        try {
+            // Загружаем данные игрока чтобы получить реферальный код
+            if (!this.userId || !this.db) {
+                console.error('❌ User ID or database not available');
+                return;
+            }
+
+            const playerData = await this.db.loadPlayerData(this.userId);
+            if (!playerData || !playerData.referral_code) {
+                console.error('❌ Player data or referral code not found');
+                return;
+            }
+
+            // Создаем реферальную ссылку
+            const botUsername = 'labubucoin_bot'; // Замените на имя вашего бота
+            const referralUrl = `https://t.me/${botUsername}?start=ref_${playerData.referral_code}`;
+            
+            // Создаем текст сообщения
+            const message = `🎮 Присоединяйся к LabubuCoin!
+            
+🚀 Нажимай, зарабатывай, покупай апгрейды!
+💰 Получи бонус за регистрацию по моей ссылке!
+            
+${referralUrl}`;
+
+            // Отправляем через Telegram WebApp API
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent(message)}`);
+            } else {
+                // Fallback: копируем в буфер обмена
+                navigator.clipboard.writeText(referralUrl).then(() => {
+                    alert('Реферальная ссылка скопирована в буфер обмена!');
+                }).catch(() => {
+                    // Показываем ссылку в алерте если не получается скопировать
+                    prompt('Скопируйте реферальную ссылку:', referralUrl);
+                });
+            }
+
+            console.log('📤 Sharing referral link:', referralUrl);
+        } catch (error) {
+            console.error('❌ Error sharing referral link:', error);
+        }
     }
 
     handleClick() {
@@ -1188,6 +1270,79 @@ class LabubuGame {
 
         container.innerHTML = ranksHTML;
         console.log(`✅ Rendered ${this.levelsConfig.ranks.length} referral ranks`);
+    }
+
+    // Отображение реальных рефералов игрока
+    async renderPlayerReferrals() {
+        if (!this.userId || !this.db) return;
+
+        try {
+            const referrals = await this.db.getPlayerReferrals(this.userId);
+            const container = document.querySelector('.overflow_friends');
+            
+            if (!container) {
+                console.error('❌ Container .overflow_friends not found');
+                return;
+            }
+
+            if (referrals.length === 0) {
+                container.innerHTML = `
+                    <div class="no_referrals w100 alcn" style="padding: 20px; text-align: center; color: #999;">
+                        <span>Пока нет рефералов</span>
+                        <br>
+                        <small>Приглашайте друзей и получайте бонусы!</small>
+                    </div>
+                `;
+                return;
+            }
+
+            const referralsHTML = referrals.map((referral, index) => {
+                const username = referral.username ? `@${referral.username}` : `User ${referral.tg_id}`;
+                const balance = this.formatNumber(referral.balance || 0);
+                const level = referral.player_level || 1;
+                
+                // Получаем ранг по уровню
+                const rank = this.levelsConfig.getRankByLevel(level);
+                const rankName = rank ? rank.name : 'Bronze 1';
+                
+                // Вычисляем награду за этого реферала
+                const reward = this.calculateReferralReward(referral.balance || 0);
+
+                return `
+                    <div class="pannel_friend w100 alcn">
+                        <div class="l_friend alcn">
+                            <img class="avatar_friend" src="assets/images/labubu.png" alt="">
+                            <div class="row_friend clmn">
+                                <span class="name_friend">${username}</span>
+                                <div class="flex_friend alcn">
+                                    <span class="rang_friend">${rankName}</span>
+                                    <div class="balance_friend alcn">
+                                        <img src="assets/images/logo.png" alt="">
+                                        <span>${balance}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="r_friend alcn">
+                            <img src="assets/images/logo.png" alt="">
+                            <span>+${this.formatNumber(reward)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = referralsHTML;
+            console.log(`✅ Rendered ${referrals.length} player referrals`);
+        } catch (error) {
+            console.error('❌ Error rendering player referrals:', error);
+        }
+    }
+
+    // Вычисление награды за реферала в зависимости от его баланса
+    calculateReferralReward(referralBalance) {
+        // Находим соответствующий ранг по балансу реферала
+        const rank = this.levelsConfig.getRankByCoins(referralBalance);
+        return rank ? rank.reward * 2 : 200; // Удвоенная награда для реферала
     }
 
     // Добавляю метод для обновления попапа с выбранным скином

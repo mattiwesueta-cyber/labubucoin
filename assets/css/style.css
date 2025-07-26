@@ -748,7 +748,7 @@ span, div:not(.form), img, svg, path, input {
 }
 .overflow_levels {
 	gap: 2.0374vw;
-	height: 33.9559vw;
+	height: 26.9559vw;
 	overflow-y: auto;
 }
 .right_ref {
@@ -862,15 +862,37 @@ span, div:not(.form), img, svg, path, input {
 	gap: 0.781vw;
 }
 .l_friend {
-	
+	gap: 1.6978vw;
 }
 .balance_friend span {
 	font-size: 2.7165vw;
 	font-family: 'SemiBold';
 	color: #fff1b8;
 }
-
-
+.r_friend img {
+	width: 3.056vw;
+	height: 3.056vw;
+}
+.r_friend span {
+	font-family: 'Travels';
+	font-size: 2.8862vw;
+}
+.r_friend {
+	gap: 1.0187vw;
+	margin-left: auto;
+}
+#invite_frinds {
+	height: 9.8472vw;
+	flex-shrink: 0;
+}
+.overflow_friends {
+	height: 22.4109vw;
+	gap: 2.0374vw;
+	overflow-y: auto;
+}
+.referal_page {
+	gap: 2.7165vw;
+}
 
 
 .flexend {

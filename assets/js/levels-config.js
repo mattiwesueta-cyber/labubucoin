@@ -300,6 +300,18 @@ class LevelsConfig {
         return this.ranks[0];
     }
 
+    // Получение ранга по уровню игрока
+    getRankByLevel(level) {
+        // Находим данные уровня
+        const levelData = this.levels.find(l => l.level === level);
+        if (!levelData) {
+            return this.ranks[0]; // Возвращаем Bronze 1 если уровень не найден
+        }
+        
+        // Получаем ранг по общему XP для этого уровня
+        return this.getRankByCoins(levelData.totalXpRequired);
+    }
+
     // Получение следующего ранга
     getNextRank(coins) {
         const currentRank = this.getRankByCoins(coins);

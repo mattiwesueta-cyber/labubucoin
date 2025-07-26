@@ -7,6 +7,111 @@ class GameDatabase {
         this.init();
     }
 
+    // Генерация уникального реферального кода
+    generateReferralCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 8; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+
+    // Проверка уникальности реферального кода
+    async isReferralCodeUnique(code) {
+        if (!this.supabase) return false;
+        try {
+            const { data, error } = await this.supabase
+                .from('players')
+                .select('referral_code')
+                .eq('referral_code', code)
+                .single();
+
+            return !data; // Если данных нет, код уникален
+        } catch (error) {
+            return true; // В случае ошибки считаем код уникальным
+        }
+    }
+
+    // Создание уникального реферального кода
+    async createUniqueReferralCode() {
+        let code;
+        let isUnique = false;
+        let attempts = 0;
+        
+        while (!isUnique && attempts < 10) {
+            code = this.generateReferralCode();
+            isUnique = await this.isReferralCodeUnique(code);
+            attempts++;
+        }
+        
+        return code;
+    }
+
+    // Поиск игрока по реферальному коду
+    async findPlayerByReferralCode(referralCode) {
+        if (!this.supabase || !referralCode) return null;
+        try {
+            const { data, error } = await this.supabase
+                .from('players')
+                .select('*')
+                .eq('referral_code', referralCode)
+                .single();
+
+            return error ? null : data;
+        } catch (error) {
+            console.error('❌ Ошибка поиска по реферальному коду:', error);
+            return null;
+        }
+    }
+
+    // Увеличение счетчика рефералов
+    async incrementReferralCount(inviterTgId) {
+        if (!this.supabase || !inviterTgId) return false;
+        try {
+            // Сначала получаем текущий счетчик
+            const { data: currentData, error: selectError } = await this.supabase
+                .from('players')
+                .select('referrals_count')
+                .eq('tg_id', inviterTgId.toString())
+                .single();
+
+            if (selectError) throw selectError;
+
+            const newCount = (currentData.referrals_count || 0) + 1;
+
+            // Обновляем счетчик
+            const { error: updateError } = await this.supabase
+                .from('players')
+                .update({ referrals_count: newCount })
+                .eq('tg_id', inviterTgId.toString());
+
+            if (updateError) throw updateError;
+            console.log('✅ Счетчик рефералов увеличен для:', inviterTgId, 'новое значение:', newCount);
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка увеличения счетчика рефералов:', error);
+            return false;
+        }
+    }
+
+    // Получение списка рефералов игрока
+    async getPlayerReferrals(userId) {
+        if (!this.supabase) return [];
+        try {
+            const { data, error } = await this.supabase
+                .from('players')
+                .select('tg_id, username, balance, player_level, last_active')
+                .eq('invited_by', userId.toString())
+                .order('last_active', { ascending: false });
+
+            return error ? [] : data;
+        } catch (error) {
+            console.error('❌ Ошибка получения списка рефералов:', error);
+            return [];
+        }
+    }
+
     init() {
         try {
             this.supabase = window.supabase.createClient(this.supabaseUrl, this.supabaseKey);
@@ -90,7 +195,7 @@ class GameDatabase {
         }
     }
 
-    async loadPlayerData(userId, username = null) {
+    async loadPlayerData(userId, username = null, referralCode = null) {
         if (!this.supabase) return null;
         try {
             console.log('🔍 Searching for player with userId:', userId, 'type:', typeof userId);
@@ -107,6 +212,19 @@ class GameDatabase {
                 console.log('❌ Player not found, creating new player...');
                 console.log('Error details:', error);
                 
+                // Генерируем уникальный реферальный код для нового игрока
+                const uniqueReferralCode = await this.createUniqueReferralCode();
+                
+                // Проверяем, кто пригласил пользователя
+                let invitedBy = null;
+                if (referralCode) {
+                    const inviter = await this.findPlayerByReferralCode(referralCode);
+                    if (inviter) {
+                        invitedBy = inviter.tg_id;
+                        console.log('🤝 Player invited by:', inviter.username || inviter.tg_id);
+                    }
+                }
+                
                 // Если игрока нет — создаём с дефолтными параметрами
                 const defaultData = {
                     tg_id: userId.toString(),
@@ -119,6 +237,9 @@ class GameDatabase {
                     costume: 'labubu.png',
                     username: username || null,
                     player_level: 1, // Устанавливаем начальный уровень
+                    referral_code: uniqueReferralCode,
+                    invited_by: invitedBy,
+                    referrals_count: 0,
                     last_updated: new Date().toISOString(),
                     last_active: new Date().toISOString()
                 };
@@ -132,6 +253,11 @@ class GameDatabase {
                 if (insertError) {
                     console.error('❌ Ошибка создания игрока:', insertError);
                     return null;
+                }
+                
+                // Если игрок пришел по рефералу, увеличиваем счетчик пригласившего
+                if (invitedBy) {
+                    await this.incrementReferralCount(invitedBy);
                 }
                 
                 console.log('✅ New player created successfully');
