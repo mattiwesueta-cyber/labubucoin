@@ -1288,9 +1288,9 @@ ${referralUrl}`;
             if (referrals.length === 0) {
                 container.innerHTML = `
                     <div class="no_referrals w100 alcn" style="padding: 20px; text-align: center; color: #999;">
-                        <span>Пока нет рефералов</span>
+                        <span></span>
                         <br>
-                        <small>Приглашайте друзей и получайте бонусы!</small>
+                        <small></small>
                     </div>
                 `;
                 return;
