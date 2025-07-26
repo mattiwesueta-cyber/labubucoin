@@ -799,7 +799,7 @@ class LabubuGame {
             }
 
             // Создаем реферальную ссылку
-            const botUsername = 'labubucoin_bot'; // Замените на имя вашего бота
+            const botUsername = 'LabubuCoinBot'; // Имя вашего бота
             const referralUrl = `https://t.me/${botUsername}?start=ref_${playerData.referral_code}`;
             
             // Создаем текст сообщения
