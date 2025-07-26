@@ -2,7 +2,7 @@
 class LabubuGame {
     constructor() {
         this.coins = 0;
-        this.stableIncome = 0; // доход в минуту
+        this.stableIncome = 3.65; // доход в минуту
         this.profitPerClick = 1;
         this.boost = 2;
         this.boostTimeLeft = 0;
