@@ -893,6 +893,14 @@ span, div:not(.form), img, svg, path, input {
 .referal_page {
 	gap: 2.7165vw;
 }
+.videobg {
+	position: absolute;
+	object-fit: fill;
+	height: auto;
+	width: 100vw;
+	height: 100vh;
+	pointer-events: none;
+}
 
 
 .flexend {

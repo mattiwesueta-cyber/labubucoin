@@ -309,12 +309,16 @@ class LabubuGame {
         const loader = document.querySelector('.load_bg');
         if (loader) loader.style.display = '';
         
+        // Дополнительное ожидание для загрузки видео/анимации/ресурсов
+        console.log('⏳ Waiting for video/animation resources to load...');
+        await new Promise(r => setTimeout(r, 1200));
+        
         // Получаем реферальный код из URL
         this.referralCode = this.getReferralCode();
         
         // Ждем инициализации supabase (база данных уже создана в конструкторе)
         while (!window.GameDatabase) { // Исправляем на window.GameDatabase
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 150)); // Увеличено с 100ms до 150ms
         }
         this.db = new window.GameDatabase(); // Инициализируем db
         
@@ -331,8 +335,9 @@ class LabubuGame {
         this.renderReferralRanks();
         // Отображаем реальных рефералов игрока
         this.renderPlayerReferrals();
-        // Искусственная задержка для лоадера
-        await new Promise(r => setTimeout(r, 0));
+        // Дополнительная задержка для завершения загрузки всех элементов
+        console.log('⏳ Finalizing video/animation setup...');
+        await new Promise(r => setTimeout(r, 800));
         // Скрываем лоадер после полной загрузки
         if (loader) loader.style.display = 'none';
     }
@@ -383,10 +388,13 @@ class LabubuGame {
                     
                     // Загружаем игровые данные
                     await this.loadPlayerDataFromDB(this.userId, urlUsername, this.referralCode);
-                } else if (retry < 5) {
-                    setTimeout(() => this.loadTelegramUser(retry + 1), 400);
+                } else if (retry < 15) {
+                    // Прогрессивное увеличение времени ожидания для видео/анимации
+                    const waitTime = Math.min(800 + (retry * 200), 2000); // от 800ms до 2s
+                    console.log(`⏳ Retry ${retry + 1}/15, waiting ${waitTime}ms for Telegram WebApp...`);
+                    setTimeout(() => this.loadTelegramUser(retry + 1), waitTime);
                 } else {
-                    console.log('❌ No user data available from Telegram WebApp or URL');
+                    console.log('❌ No user data available from Telegram WebApp or URL after 15 attempts');
                     const userElement = document.getElementById('user_id');
                     if (userElement) userElement.textContent = 'Player';
                 }
@@ -1845,7 +1853,11 @@ function animateCircles() {
 }
 
 // 🚀 Запуск игры
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Дополнительное ожидание для полной загрузки DOM и видео элементов
+    console.log('⏳ DOM loaded, waiting for video/media resources...');
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
     window.labubuGame = new LabubuGame();
     console.log('🎮 LabubuCoin Game запущена!');
     setInterval(animateCircles, 2000);
