@@ -363,10 +363,30 @@ class LabubuGame {
                 // Загружаем все игровые данные из Supabase, передавая username и реферальный код
                 await this.loadPlayerDataFromDB(user.id, user.username, this.referralCode);
             } else {
-                if (retry < 5) {
+                // Fallback: пытаемся получить данные из URL параметров
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlUserId = urlParams.get('tg_user_id');
+                const urlUsername = urlParams.get('tg_username');
+                
+                if (urlUserId) {
+                    console.log('🔗 Getting user data from URL parameters');
+                    console.log('🆔 URL User ID:', urlUserId);
+                    console.log('👤 URL Username:', urlUsername);
+                    
+                    this.userId = parseInt(urlUserId);
+                    
+                    // Отображаем username
+                    const userElement = document.getElementById('user_id');
+                    if (userElement) {
+                        userElement.textContent = urlUsername ? `@${urlUsername}` : 'Player';
+                    }
+                    
+                    // Загружаем игровые данные
+                    await this.loadPlayerDataFromDB(this.userId, urlUsername, this.referralCode);
+                } else if (retry < 5) {
                     setTimeout(() => this.loadTelegramUser(retry + 1), 400);
                 } else {
-                    // Удаляю показ сообщения tg_api_warn
+                    console.log('❌ No user data available from Telegram WebApp or URL');
                     const userElement = document.getElementById('user_id');
                     if (userElement) userElement.textContent = 'Player';
                 }
