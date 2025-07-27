@@ -143,7 +143,7 @@ class LabubuGame {
                 progressTextElement.textContent = 'MAX RANK';
                          } else {
                 const coinsToNextRank = nextRank.requiredCoins - this.coins;
-                progressTextElement.textContent = `${Math.floor(coinsToNextRank)} Coins left`;
+                progressTextElement.textContent = `${this.formatNumber(Math.floor(coinsToNextRank))} Coins left`;
             }
             console.log('📊 Progress text updated to:', progressTextElement.textContent);
         }
@@ -1063,23 +1063,44 @@ ${referralUrl}`;
         }
     }
 
+    // Функция форматирования больших чисел
+    formatNumber(num) {
+        if (num < 100) {
+            return num.toFixed(2);
+        } else if (num < 1000) {
+            return num.toFixed(1);
+        } else if (num < 1000000) {
+            const formatted = (num / 1000).toFixed(1);
+            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'К' : formatted + 'К';
+        } else if (num < 1000000000) {
+            const formatted = (num / 1000000).toFixed(1);
+            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'М' : formatted + 'М';
+        } else if (num < 1000000000000) {
+            const formatted = (num / 1000000000).toFixed(1);
+            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'Б' : formatted + 'Б';
+        } else {
+            const formatted = (num / 1000000000000).toFixed(1);
+            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'Т' : formatted + 'Т';
+        }
+    }
+
     // Удаляю startIncomeTimer полностью
 
     updateUI() {
-        // Отображаем баланс с точностью до 2 знаков после запятой
+        // Отображаем баланс с форматированием (К, М, Б, Т)
         const balanceElement = document.querySelector('.flex_balance span');
         if (balanceElement) {
-            balanceElement.textContent = this.coins.toFixed(2);
+            balanceElement.textContent = this.formatNumber(this.coins);
         }
 
         const stableIncomeElement = document.querySelector('.flex_i span');
         if (stableIncomeElement) {
-            stableIncomeElement.textContent = this.stableIncome.toFixed(2);
+            stableIncomeElement.textContent = this.formatNumber(this.stableIncome);
         }
 
         const profitPerClickElement = document.querySelector('.flex_c span');
         if (profitPerClickElement) {
-            profitPerClickElement.textContent = this.profitPerClick.toString();
+            profitPerClickElement.textContent = this.formatNumber(this.profitPerClick);
         }
 
         // Обновляем буст
@@ -1100,16 +1121,7 @@ ${referralUrl}`;
         this.updateLevelProgressBar();
     }
 
-    formatNumber(num) {
-        if (num >= 1e9) {
-            return (Math.floor(num / 1e7) / 100).toFixed(2) + 'B'; // 2 знака после запятой
-        } else if (num >= 1e6) {
-            return (Math.floor(num / 1e4) / 100).toFixed(2) + 'M'; // 2 знака после запятой
-        } else if (num >= 1e3) {
-            return (Math.floor(num) / 1000).toFixed(2) + 'K'; // 2 знака после запятой
-        }
-        return Math.floor(num).toString();
-    }
+
 
     formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
@@ -1392,7 +1404,7 @@ ${referralUrl}`;
         // Stable income
         const stableIncomeSpan = popout.querySelector('.box_lb .row_profit_lb .flex_i span');
         if (stableIncomeSpan) {
-            stableIncomeSpan.textContent = '+' + this.selectedCard.stableIncome;
+            stableIncomeSpan.textContent = '+' + this.formatNumber(this.selectedCard.stableIncome);
         }
         // Цена
         const priceSpan = popout.querySelector('.price_pannel .pr_wrapper span');
@@ -1443,7 +1455,7 @@ ${referralUrl}`;
         // Stable income
         const stableIncomeSpan = popout.querySelector('.box_lb .row_profit_lb .flex_i span');
         if (stableIncomeSpan) {
-            stableIncomeSpan.textContent = '+' + this.selectedAccessory.stableIncome;
+            stableIncomeSpan.textContent = '+' + this.formatNumber(this.selectedAccessory.stableIncome);
         }
         // Цена
         const priceSpan = popout.querySelector('.price_pannel .pr_wrapper span');
