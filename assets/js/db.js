@@ -154,6 +154,8 @@ class GameDatabase {
                 if (gameData.boostTimeLeft !== undefined) updateData.boost_time_left = Math.floor(gameData.boostTimeLeft);
                 if (gameData.isBoostActive !== undefined) updateData.is_boost_active = gameData.isBoostActive;
                 if (gameData.costume !== undefined) updateData.costume = gameData.costume;
+                if (gameData.currentEnergy !== undefined) updateData.current_energy = Math.floor(gameData.currentEnergy);
+                if (gameData.maxEnergy !== undefined) updateData.max_energy = Math.floor(gameData.maxEnergy);
                 if (gameData.accessories !== undefined) {
                     updateData.accessories = typeof gameData.accessories === 'string' 
                         ? gameData.accessories 
@@ -179,6 +181,8 @@ class GameDatabase {
                         boost_time_left: Math.floor(gameData.boostTimeLeft),
                         is_boost_active: gameData.isBoostActive,
                         costume: gameData.costume,
+                        current_energy: Math.floor(gameData.currentEnergy || 100),
+                        max_energy: Math.floor(gameData.maxEnergy || 100),
                         accessories: typeof gameData.accessories === 'string' 
                             ? gameData.accessories 
                             : JSON.stringify(gameData.accessories || {}),
@@ -240,6 +244,8 @@ class GameDatabase {
                     referral_code: uniqueReferralCode,
                     invited_by: invitedBy,
                     referrals_count: 0,
+                    current_energy: 100, // Начальная энергия
+                    max_energy: 100, // Максимальная энергия
                     last_updated: new Date().toISOString(),
                     last_active: new Date().toISOString()
                 };
@@ -423,6 +429,32 @@ class GameDatabase {
             return true;
         } catch (error) {
             console.error('❌ Ошибка обновления уровня игрока:', error);
+            return false;
+        }
+    }
+    
+    // Безопасное обновление энергии игрока
+    async updateEnergy(userId, currentEnergy, maxEnergy = null) {
+        if (!this.supabase) return false;
+        try {
+            const updateData = {
+                current_energy: Math.floor(currentEnergy),
+                last_updated: new Date().toISOString()
+            };
+            
+            if (maxEnergy !== null) {
+                updateData.max_energy = Math.floor(maxEnergy);
+            }
+            
+            const { error } = await this.supabase
+                .from('players')
+                .update(updateData)
+                .eq('tg_id', userId.toString());
+            if (error) throw error;
+            console.log('Energy updated successfully:', currentEnergy + (maxEnergy ? '/' + maxEnergy : ''));
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка обновления энергии:', error);
             return false;
         }
     }

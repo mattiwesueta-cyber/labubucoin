@@ -160,7 +160,7 @@ span, div:not(.form), img, svg, path, input {
 }
 .bg_under_circle {
 	width: 92.02vw;
-	height: 82.5127vw;
+	height: 50.5127vw;
 	position: absolute;
 	bottom: 0;
 	left: 50%;
@@ -901,6 +901,32 @@ span, div:not(.form), img, svg, path, input {
 	height: 100vh;
 	pointer-events: none;
 }
+.energy {
+	position: absolute;
+	left: 0;
+	top: 1vw;
+	height: 7.6401vw;
+	background: rgba(243, 165, 123, 0.25);
+	border-radius: 9.338vw;
+	padding: 1.698vw;
+	gap: 1.0187vw;
+
+}
+.energy svg {
+	width: 3.5654vw;
+	height: 3.5654vw;
+}
+.energy span {
+	font-size: 3.3956vw;
+	font-family: 'SemiBold';
+	color: #f3a57b;
+}
+.energy_max {
+	font-family: 'Medium' !important;
+	letter-spacing: -0.04em;
+	color: rgba(243, 165, 123, 0.5) !important;
+}
+
 
 
 .flexend {

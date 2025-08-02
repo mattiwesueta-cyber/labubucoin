@@ -16,6 +16,11 @@ class LabubuGame {
         this.onlineIncomeInterval = null; // интервал для начисления онлайн дохода
         this.lastOnlineIncomeSave = Date.now(); // время последнего сохранения онлайн дохода
 
+        // Система энергии
+        this.currentEnergy = 100; // текущая энергия
+        this.maxEnergy = 100; // максимальная энергия
+        this.lastEnergyUpdate = Date.now(); // время последнего обновления энергии
+
         // Система уровней
         this.currentLevel = 1;
         this.currentXp = 0;
@@ -463,8 +468,11 @@ class LabubuGame {
             this.costume = data.costume || 'labubu.png';
             this.accessories = data.accessories || {};
             this.currentLevel = data.player_level || 1; // Загружаем уровень игрока
+            this.currentEnergy = data.current_energy || 100; // Загружаем текущую энергию
+            this.maxEnergy = data.max_energy || 100; // Загружаем максимальную энергию
 
             console.log('Set local balance to:', this.coins);
+            console.log('Set energy to:', this.currentEnergy + '/' + this.maxEnergy);
 
             // Применяем costume к картинке
             const labubuImg = document.querySelector('.labubu_pic');
@@ -858,15 +866,36 @@ ${referralUrl}`;
     }
 
     handleClick() {
+        // Проверяем, есть ли достаточно энергии для клика
+        const energyCost = this.profitPerClick;
+        if (this.currentEnergy < energyCost) {
+            console.log('❌ Недостаточно энергии для клика. Нужно:', energyCost, 'Есть:', this.currentEnergy);
+            this.showEnergyWarning();
+            return;
+        }
+
+        // Расходуем energyCost единиц энергии за клик (равно profitPerClick)
+        this.currentEnergy = Math.max(0, this.currentEnergy - energyCost);
+        
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
         this.showProfitAnimation(profit);
         this.updateUI();
         this.saveGameData();
-        console.log('handleClick: userId =', this.userId, 'coins =', this.coins);
+        console.log('handleClick: userId =', this.userId, 'coins =', this.coins, 'energy =', this.currentEnergy, 'spent =', energyCost);
         this.updateBalanceInDB();
         this.spawnRandomProfitSpan(profit);
         this.animateCircleBg();
+    }
+
+    // Показать предупреждение о нехватке энергии
+    showEnergyWarning() {
+        console.log(`⚡ Недостаточно энергии! Нужно ${this.profitPerClick}, есть ${this.currentEnergy}. Подождите восстановления.`);
+        
+        // Добавим вибрацию, если доступна
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+        }
     }
 
     async handleBuyCard() {
@@ -1117,6 +1146,12 @@ ${referralUrl}`;
             }
         }
 
+        // Обновляем энергию
+        const energyElement = document.querySelector('.energy_text');
+        if (energyElement) {
+            energyElement.innerHTML = `${this.currentEnergy}<span class="energy_max">/${this.maxEnergy}</span>`;
+        }
+
         // Обновляем систему уровней
         this.updateLevelProgressBar();
     }
@@ -1140,8 +1175,9 @@ ${referralUrl}`;
         if (!this.userId || !this.db) return;
         
         // Используем безопасные функции вместо полной перезаписи
-        // Обновляем только баланс (основная причина вызова этой функции)
+        // Обновляем баланс и энергию
         this.db.updateBalance(this.userId, this.coins);
+        this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
         
         // Если активен буст, можно добавить отдельную функцию для его обновления
         // Но пока не критично, так как буст сейчас не используется активно
@@ -1650,12 +1686,19 @@ ${referralUrl}`;
                 // Добавляем доход за секунду
                 this.coins += incomePerSecond;
                 
+                // Восстанавливаем энергию (profitPerClick единиц в секунду)
+                if (this.currentEnergy < this.maxEnergy) {
+                    this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + this.profitPerClick);
+                }
+                
                 // Логируем каждые 10 секунд для не засорения консоли
                 if (Math.floor(Date.now() / 1000) % 10 === 0) {
-                    console.log('💰 Online income:', {
-                        before: oldCoins.toFixed(4),
-                        added: incomePerSecond.toFixed(4),
-                        after: this.coins.toFixed(4),
+                    console.log('💰 Online income & ⚡ Energy regen:', {
+                        coinsBefore: oldCoins.toFixed(4),
+                        coinsAdded: incomePerSecond.toFixed(4),
+                        coinsAfter: this.coins.toFixed(4),
+                        energy: `${this.currentEnergy}/${this.maxEnergy}`,
+                        energyRegen: this.profitPerClick,
                         stableIncomePerMin: this.stableIncome
                     });
                 }
