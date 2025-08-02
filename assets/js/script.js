@@ -471,6 +471,40 @@ class LabubuGame {
             this.currentEnergy = data.current_energy || 100; // Загружаем текущую энергию
             this.maxEnergy = data.max_energy || 100; // Загружаем максимальную энергию
 
+            // Восстанавливаем энергию за время отсутствия
+            if (data.last_active) {
+                const lastActiveTime = new Date(data.last_active).getTime();
+                const currentTime = now;
+                const secondsOffline = Math.floor((currentTime - lastActiveTime) / 1000);
+                
+                if (secondsOffline > 0 && this.currentEnergy < this.maxEnergy) {
+                    const energyToRestore = secondsOffline * this.profitPerClick;
+                    const oldEnergy = this.currentEnergy;
+                    this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + energyToRestore);
+                    
+                    console.log('⚡ Energy restored for offline time:', {
+                        secondsOffline: secondsOffline,
+                        energyRestored: this.currentEnergy - oldEnergy,
+                        oldEnergy: oldEnergy,
+                        newEnergy: this.currentEnergy,
+                        maxEnergy: this.maxEnergy
+                    });
+                    
+                    // Сохраняем восстановленную энергию в БД
+                    if (this.userId && this.db) {
+                        await this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
+                    }
+                }
+            }
+
+            // Обновляем время последней активности при входе в игру
+            if (this.userId && this.db) {
+                await this.db.updateLastActive(this.userId, new Date().toISOString());
+            }
+
+            // Добавляем обработчик выхода из игры для сохранения энергии
+            this.setupExitHandlers();
+
             console.log('Set local balance to:', this.coins);
             console.log('Set energy to:', this.currentEnergy + '/' + this.maxEnergy);
 
@@ -1874,6 +1908,34 @@ ${referralUrl}`;
             this.updateLevelProgressBar();
         }
     }
+
+    // Настройка обработчиков выхода из игры для сохранения энергии
+    setupExitHandlers() {
+        // Добавляем только если не добавлены ранее
+        if (!this.exitHandlersSetup) {
+            this.exitHandlersSetup = true;
+            console.log('🔧 Setting up exit handlers for energy saving');
+            
+            // Сохранение при потере фокуса окна
+            const saveEnergyOnBlur = async () => {
+                if (this.userId && this.db) {
+                    console.log('💾 Saving energy on window blur');
+                    await this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
+                }
+            };
+            
+            // Сохранение при скрытии вкладки
+            const saveEnergyOnHidden = async () => {
+                if (document.hidden && this.userId && this.db) {
+                    console.log('💾 Saving energy on tab hide');
+                    await this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
+                }
+            };
+            
+            window.addEventListener('blur', saveEnergyOnBlur);
+            document.addEventListener('visibilitychange', saveEnergyOnHidden);
+        }
+    }
 }
 
 
@@ -2118,16 +2180,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.labubuGame.setOnlineStatus(false);
             
             try {
+                // Сохраняем энергию и время
+                await window.labubuGame.db.updateEnergy(window.labubuGame.userId, window.labubuGame.currentEnergy, window.labubuGame.maxEnergy);
+                
                 const timeResponse = await fetch('https://labubucoin.vercel.app/api/server-time');
                 const { serverTime } = await timeResponse.json();
                 await window.labubuGame.db.updateLastActive(window.labubuGame.userId, serverTime);
             } catch (error) {
-                console.error('Error saving last_active on unload:', error);
+                console.error('Error saving data on unload:', error);
                 // В случае ошибки используем клиентское время как fallback
+                await window.labubuGame.db.updateEnergy(window.labubuGame.userId, window.labubuGame.currentEnergy, window.labubuGame.maxEnergy);
                 await window.labubuGame.db.updateLastActive(window.labubuGame.userId, new Date().toISOString());
             }
         }
     });
+
+
 
     // Отслеживание видимости вкладки для пауз онлайн дохода
     document.addEventListener('visibilitychange', () => {
