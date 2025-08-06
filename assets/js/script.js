@@ -142,9 +142,26 @@ class LabubuGame {
         // Получаем прогресс до следующего уровня
         const progress = this.levelsConfig.getLevelProgress(currentXp);
         
+        // 🔍 Детальная отладка прогресса
+        console.log('🔍 Debug calculateLevel:', {
+            coins: this.coins,
+            currentXp,
+            calculatedLevel,
+            'getLevelProgress(95)': this.levelsConfig.getLevelProgress(95),
+            'raw_progress': progress,
+            'progress_type': typeof progress
+        });
+        
         // Получаем информацию о текущем уровне
         const levelInfo = this.levelsConfig.getLevelInfo(calculatedLevel);
         const nextLevelInfo = this.levelsConfig.getLevelInfo(calculatedLevel + 1);
+        
+        console.log('📊 Level info debug:', {
+            levelInfo,
+            nextLevelInfo,
+            'levelInfo.totalXpRequired': levelInfo?.totalXpRequired,
+            'nextLevelInfo.totalXpRequired': nextLevelInfo?.totalXpRequired
+        });
         
         let xpToNextLevel = 0;
         if (nextLevelInfo) {
@@ -2217,6 +2234,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         game.coins = coins;
         game.updateLevelProgressBar();
         console.log('✅ Coins updated. Check the progress bar!');
+    };
+    
+    window.debugCurrentProgress = () => {
+        const game = window.labubuGame;
+        console.log('=== CURRENT PROGRESS DEBUG ===');
+        console.log('Current coins:', game.coins);
+        
+        if (game.levelsConfig) {
+            console.log('getLevelByTotalXP result:', game.levelsConfig.getLevelByTotalXP(Math.floor(game.coins)));
+            console.log('getLevelProgress result:', game.levelsConfig.getLevelProgress(Math.floor(game.coins)));
+            console.log('getLevelInfo(1):', game.levelsConfig.getLevelInfo(1));
+            console.log('getLevelInfo(2):', game.levelsConfig.getLevelInfo(2));
+            
+            // Тестируем разные значения
+            console.log('--- Testing different values ---');
+            for (let i = 0; i <= 200; i += 50) {
+                console.log(`XP: ${i}, Level: ${game.levelsConfig.getLevelByTotalXP(i)}, Progress: ${game.levelsConfig.getLevelProgress(i)}%`);
+            }
+        }
     };
     
     // 🔧 Функция для пересоздания системы уровней
