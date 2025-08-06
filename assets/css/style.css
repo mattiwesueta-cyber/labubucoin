@@ -963,6 +963,10 @@ span, div:not(.form), img, svg, path, input {
 	margin-top: 1.3582vw;
 	text-align: center;
 }
+.required_referals svg, .required_level svg {
+	width: 5.2632vw;
+	height: 5.2632vw;
+}
 .row_required span:first-child  {
 	font-size: 2.4992vw;
 	font-family: 'Regular';
