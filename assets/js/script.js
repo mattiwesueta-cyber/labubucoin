@@ -53,11 +53,14 @@ class LabubuGame {
                 console.log(`⏳ Waiting for levels config... (attempt ${attempts}/${maxAttempts})`);
                 
                 if (window.LevelsConfig) {
-                    this.levelsConfig = window.LevelsConfig;
+                    // Создаем экземпляр класса LevelsConfig
+                    this.levelsConfig = new window.LevelsConfig();
                     console.log('🎮 Levels system initialized with config');
                     console.log('📊 Config details:', {
                         levels: this.levelsConfig.levels?.length,
-                        ranks: this.levelsConfig.ranks?.length
+                        ranks: this.levelsConfig.ranks?.length,
+                        type: typeof this.levelsConfig,
+                        methods: Object.getOwnPropertyNames(Object.getPrototypeOf(this.levelsConfig))
                     });
                     resolve();
                 } else if (attempts >= maxAttempts) {
@@ -77,41 +80,93 @@ class LabubuGame {
     createFallbackLevelsConfig() {
         console.log('🛠️ Creating fallback levels config...');
         this.levelsConfig = {
-            levels: [{ level: 1, totalXpRequired: 0, rank: 'Bronze 1', rankColor: '#CD7F32' }],
-            ranks: [{ id: 'bronze_1', name: 'Bronze 1', requiredCoins: 0, color: '#CD7F32' }],
-            getLevelByTotalXP: (xp) => 1,
-            getLevelProgress: (xp) => 0,
-            getRankByCoins: (coins) => ({ id: 'bronze_1', name: 'Bronze 1', requiredCoins: 0, color: '#CD7F32' }),
-            getLevelInfo: (level) => ({ level: 1, totalXpRequired: 0, rank: 'Bronze 1', rankColor: '#CD7F32' })
+            levels: [
+                { level: 1, totalXpRequired: 0, rank: 'Bronze 1', rankColor: '#CD7F32' },
+                { level: 2, totalXpRequired: 100, rank: 'Bronze 1', rankColor: '#CD7F32' },
+                { level: 3, totalXpRequired: 250, rank: 'Bronze 2', rankColor: '#CD7F32' }
+            ],
+            ranks: [
+                { id: 'bronze_1', name: 'Bronze 1', requiredCoins: 0, color: '#CD7F32', icon: '🥉' },
+                { id: 'bronze_2', name: 'Bronze 2', requiredCoins: 250, color: '#CD7F32', icon: '🥉' }
+            ],
+            getLevelByTotalXP: (xp) => {
+                if (xp >= 250) return 3;
+                if (xp >= 100) return 2;
+                return 1;
+            },
+            getLevelProgress: (xp) => {
+                // Простой расчет прогресса
+                if (xp >= 250) return 0; // Максимальный уровень
+                if (xp >= 100) {
+                    // Прогресс от уровня 2 к уровню 3 (100-250 XP)
+                    return ((xp - 100) / (250 - 100)) * 100;
+                }
+                // Прогресс от уровня 1 к уровню 2 (0-100 XP)
+                return (xp / 100) * 100;
+            },
+            getRankByCoins: (coins) => {
+                if (coins >= 250) return { id: 'bronze_2', name: 'Bronze 2', requiredCoins: 250, color: '#CD7F32', icon: '🥉' };
+                return { id: 'bronze_1', name: 'Bronze 1', requiredCoins: 0, color: '#CD7F32', icon: '🥉' };
+            },
+            getLevelInfo: (level) => {
+                const levels = [
+                    { level: 1, totalXpRequired: 0, rank: 'Bronze 1', rankColor: '#CD7F32' },
+                    { level: 2, totalXpRequired: 100, rank: 'Bronze 1', rankColor: '#CD7F32' },
+                    { level: 3, totalXpRequired: 250, rank: 'Bronze 2', rankColor: '#CD7F32' }
+                ];
+                return levels.find(l => l.level === level) || levels[0];
+            },
+            getNextRank: (coins) => {
+                if (coins < 250) return { id: 'bronze_2', name: 'Bronze 2', requiredCoins: 250, color: '#CD7F32', icon: '🥉' };
+                return null; // Максимальный ранг
+            }
         };
-        console.log('✅ Fallback levels config created');
+        console.log('✅ Fallback levels config created with proper progress calculation');
     }
 
     // Вычисление уровня игрока на основе баланса
     calculateLevel() {
+        console.log('🧮 calculateLevel called, levelsConfig exists:', !!this.levelsConfig);
+        
         if (!this.levelsConfig) {
+            console.log('❌ No levelsConfig, returning fallback data');
             return { level: 1, currentXp: 0, progress: 0, xpToNextLevel: 100 };
         }
         
         // Используем баланс как XP
         const currentXp = Math.floor(this.coins);
+        console.log('💰 Current XP (coins):', currentXp);
         
         // Получаем текущий уровень (НЕ изменяем this.currentLevel здесь!)
         const calculatedLevel = this.levelsConfig.getLevelByTotalXP(currentXp);
+        console.log('📈 Calculated level:', calculatedLevel);
         
         // Получаем прогресс до следующего уровня
         const progress = this.levelsConfig.getLevelProgress(currentXp);
+        console.log('📊 Level progress:', progress + '%');
+        
+        // 🔍 Дополнительная отладка для диагностики
+        console.log('🔍 Debug info:', {
+            currentXp,
+            calculatedLevel,
+            progress,
+            'levelsConfig type': typeof this.levelsConfig,
+            'getLevelProgress result': this.levelsConfig.getLevelProgress(currentXp)
+        });
         
         // Получаем информацию о текущем уровне
         const levelInfo = this.levelsConfig.getLevelInfo(calculatedLevel);
         const nextLevelInfo = this.levelsConfig.getLevelInfo(calculatedLevel + 1);
+        
+        console.log('ℹ️ Level info:', levelInfo);
+        console.log('⏭️ Next level info:', nextLevelInfo);
         
         let xpToNextLevel = 0;
         if (nextLevelInfo) {
             xpToNextLevel = nextLevelInfo.totalXpRequired - currentXp;
         }
         
-        return {
+        const result = {
             level: calculatedLevel,
             currentXp: currentXp,
             progress: progress,
@@ -119,24 +174,44 @@ class LabubuGame {
             levelInfo: levelInfo,
             nextLevelInfo: nextLevelInfo
         };
+        
+        console.log('🔢 calculateLevel result:', result);
+        return result;
     }
 
-    // Обновление прогресс-бара уровня
+        // Обновление прогресс-бара уровня
     updateLevelProgressBar() {
-        if (!this.levelsConfig) return;
+        console.log('🔄 updateLevelProgressBar called');
+        console.log('🔍 levelsConfig exists:', !!this.levelsConfig);
+        console.log('💰 Current coins:', this.coins);
+        
+        if (!this.levelsConfig) {
+            console.log('❌ levelsConfig not initialized, skipping progress bar update');
+            return;
+        }
         
         // Сохраняем текущий уровень ДО вычисления нового
         const oldLevel = this.currentLevel;
         
         const levelData = this.calculateLevel();
+        console.log('📊 Level data calculated:', levelData);
+        
         const progressElement = document.getElementById('progress_value');
         const rankElement = document.getElementById('level_rank');
         const progressTextElement = document.getElementById('level_progress');
+        
+        console.log('🎯 DOM elements found:', {
+            progressElement: !!progressElement,
+            rankElement: !!rankElement,
+            progressTextElement: !!progressTextElement
+        });
         
         // Обновляем ширину прогресс-бара от 0 до 100%
         if (progressElement) {
             progressElement.style.width = `${levelData.progress}%`;
             console.log('🎨 Progress bar updated to:', levelData.progress.toFixed(1) + '%');
+        } else {
+            console.log('❌ progress_value element not found');
         }
         
         // Обновляем текст ранга и уровня
@@ -153,7 +228,7 @@ class LabubuGame {
             
             if (!nextRank) {
                 progressTextElement.textContent = 'MAX RANK';
-                         } else {
+            } else {
                 const coinsToNextRank = nextRank.requiredCoins - this.coins;
                 progressTextElement.textContent = `${this.formatNumber(Math.floor(coinsToNextRank))} Coins left`;
             }
@@ -2147,6 +2222,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         console.log('✅ Requirements updated. Check the cards in the upgrade page.');
         console.log('To restore real data, reload the page or call window.labubuGame.updateItemsAvailability()');
+    };
+    
+    // 🎯 Отладочные функции для прогресс-бара
+    window.testProgressBar = () => {
+        const game = window.labubuGame;
+        console.log('🧪 Testing progress bar...');
+        game.updateLevelProgressBar();
+    };
+    
+    window.debugLevelsConfig = () => {
+        const game = window.labubuGame;
+        console.log('=== LEVELS CONFIG DEBUG ===');
+        console.log('levelsConfig exists:', !!game.levelsConfig);
+        console.log('levelsConfig object:', game.levelsConfig);
+        
+        if (game.levelsConfig) {
+            console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(game.levelsConfig)));
+            console.log('Test getLevelByTotalXP(100):', game.levelsConfig.getLevelByTotalXP(100));
+            console.log('Test getLevelProgress(100):', game.levelsConfig.getLevelProgress(100));
+        }
+    };
+    
+    window.setCoinsAndTest = (coins = 50) => {
+        const game = window.labubuGame;
+        console.log(`🧪 Setting coins to ${coins} and testing progress bar...`);
+        game.coins = coins;
+        game.updateLevelProgressBar();
+        console.log('✅ Coins updated. Check the progress bar!');
+    };
+    
+    // 🔧 Функция для пересоздания системы уровней
+    window.reinitLevels = async () => {
+        const game = window.labubuGame;
+        console.log('🔄 Reinitializing levels system...');
+        await game.initLevelsSystem();
+        game.updateLevelProgressBar();
+        console.log('✅ Levels system reinitialized!');
     };
     
     // Добавляем обработчики для переключения категорий/страниц
