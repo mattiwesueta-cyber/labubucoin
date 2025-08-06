@@ -698,8 +698,10 @@ span, div:not(.form), img, svg, path, input {
 	width: 45.3311vw;
 	height: 3.905vw;
 }
+.wrapper_progress {
+	position: relative;
+}
 .progress_lvl {
-	width: 25%;
 	height: 3.905vw;
 	overflow: hidden;
 	position: absolute;
