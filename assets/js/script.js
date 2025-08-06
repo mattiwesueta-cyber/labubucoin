@@ -26,7 +26,14 @@ class LabubuGame {
         this.currentXp = 0;
         this.levelsConfig = null; // Будет инициализирована после загрузки конфига
 
+        // Данные игрока для проверки требований
+        this.playerData = {
+            level: 1,
+            referrals_count: 0
+        };
+
         this.db = null; // Инициализируем в init() после загрузки DOM
+        
         this.init();
     }
 
@@ -172,6 +179,74 @@ class LabubuGame {
             progress: levelData.progress.toFixed(1) + '%',
             xpToNext: levelData.xpToNextLevel
         });
+    }
+
+    // 🔒 Проверка требований для покупки предмета
+    checkItemRequirements(itemElement) {
+        const requiredLevel = parseInt(itemElement.dataset.requiredLevel) || 1;
+        const requiredReferrals = parseInt(itemElement.dataset.requiredReferrals) || 0;
+        
+        const playerLevel = this.calculateLevel().level;
+        const playerReferrals = this.playerData.referrals_count;
+        
+        return {
+            canBuy: playerLevel >= requiredLevel && playerReferrals >= requiredReferrals,
+            hasLevel: playerLevel >= requiredLevel,
+            hasReferrals: playerReferrals >= requiredReferrals,
+            playerLevel,
+            playerReferrals,
+            requiredLevel,
+            requiredReferrals
+        };
+    }
+
+    // 🎨 Обновление визуального состояния карточек на основе требований
+    updateItemsAvailability() {
+        const allItems = document.querySelectorAll('.box_lb[data-required-level]');
+        
+        allItems.forEach(itemElement => {
+            const wrapper = itemElement.closest('.wrapper_lb');
+            if (!wrapper) return;
+            
+            const requirements = this.checkItemRequirements(itemElement);
+            
+            // Сброс всех классов блокировки
+            wrapper.classList.remove('blocked_card', 'blocked_referals');
+            
+            if (!requirements.canBuy) {
+                if (!requirements.hasLevel) {
+                    // Блокируем по уровню
+                    wrapper.classList.add('blocked_card');
+                    console.log(`🔒 Item ${itemElement.dataset.id} blocked by level requirement:`, 
+                               requirements.playerLevel, '/', requirements.requiredLevel);
+                } else if (!requirements.hasReferrals) {
+                    // Блокируем по рефералам
+                    wrapper.classList.add('blocked_referals');
+                    console.log(`🔒 Item ${itemElement.dataset.id} blocked by referrals requirement:`, 
+                               requirements.playerReferrals, '/', requirements.requiredReferrals);
+                }
+                
+                // Обновляем отображение требований в UI
+                this.updateRequirementDisplay(wrapper, requirements);
+            } else {
+                console.log(`✅ Item ${itemElement.dataset.id} is available for purchase`);
+            }
+        });
+    }
+
+    // 📝 Обновление отображения требований в UI карточки
+    updateRequirementDisplay(wrapper, requirements) {
+        // Обновляем required level
+        const levelRequirement = wrapper.querySelector('.required_level .row_required span:last-child');
+        if (levelRequirement) {
+            // Здесь можно было бы показать конкретный уровень, но пока оставим как есть
+        }
+        
+        // Обновляем required referrals
+        const referralsRequirement = wrapper.querySelector('.required_referals .row_required span:last-child');
+        if (referralsRequirement) {
+            referralsRequirement.textContent = requirements.requiredReferrals;
+        }
     }
 
     // Сохранение уровня в БД
@@ -468,14 +543,25 @@ class LabubuGame {
             this.costume = data.costume || 'labubu.png';
             this.accessories = data.accessories || {};
             this.currentLevel = data.player_level || 1; // Загружаем уровень игрока
-            this.currentEnergy = data.current_energy || 100; // Загружаем текущую энергию
-            this.maxEnergy = data.max_energy || 100; // Загружаем максимальную энергию
+            this.currentEnergy = data.current_energy !== undefined ? data.current_energy : 100; // Загружаем текущую энергию
+            this.maxEnergy = data.max_energy !== undefined ? data.max_energy : 100; // Загружаем максимальную энергию
+
+            console.log('💾 Energy loaded from DB:', this.currentEnergy + '/' + this.maxEnergy);
 
             // Восстанавливаем энергию за время отсутствия
             if (data.last_active) {
                 const lastActiveTime = new Date(data.last_active).getTime();
                 const currentTime = now;
                 const secondsOffline = Math.floor((currentTime - lastActiveTime) / 1000);
+                
+                console.log('⏰ Offline time calculation:', {
+                    lastActiveTime: data.last_active,
+                    currentTime: new Date(now).toISOString(),
+                    secondsOffline: secondsOffline,
+                    currentEnergy: this.currentEnergy,
+                    maxEnergy: this.maxEnergy,
+                    profitPerClick: this.profitPerClick
+                });
                 
                 if (secondsOffline > 0 && this.currentEnergy < this.maxEnergy) {
                     const energyToRestore = secondsOffline * this.profitPerClick;
@@ -494,13 +580,12 @@ class LabubuGame {
                     if (this.userId && this.db) {
                         await this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
                     }
+                } else {
+                    console.log('⚡ No energy restoration needed');
                 }
             }
 
-            // Обновляем время последней активности при входе в игру
-            if (this.userId && this.db) {
-                await this.db.updateLastActive(this.userId, new Date().toISOString());
-            }
+            // НЕ обновляем last_active сразу при входе - только при активных действиях
 
             // Добавляем обработчик выхода из игры для сохранения энергии
             this.setupExitHandlers();
@@ -607,7 +692,14 @@ class LabubuGame {
                 }
             }
 
+            // 🔄 Обновляем данные игрока для проверки требований
+            this.playerData.level = this.calculateLevel().level;
+            this.playerData.referrals_count = data.referrals_count || 0;
+
             this.updateUI();
+            
+            // 🔒 Обновляем доступность предметов на основе требований
+            this.updateItemsAvailability();
             
             // 🆙 Принудительно обновляем уровень после загрузки всех данных
             this.forceUpdateLevel();
@@ -743,7 +835,24 @@ class LabubuGame {
                         this.updatePopoutConfirmAcces();
                     }
                 } else {
-                    // Это обычный suit
+                    // Это обычный suit - проверяем требования
+                    const requirements = this.checkItemRequirements(card);
+                    
+                    if (!requirements.canBuy) {
+                        // Показываем предупреждение о недоступности
+                        let message = '';
+                        if (!requirements.hasLevel) {
+                            message = `Требуется ${requirements.requiredLevel} уровень. У вас ${requirements.playerLevel} уровень.`;
+                        } else if (!requirements.hasReferrals) {
+                            message = `Требуется ${requirements.requiredReferrals} рефералов. У вас ${requirements.playerReferrals} рефералов.`;
+                        }
+                        
+                        // Можно показать alert или красивый попап
+                        alert(message);
+                        return; // Не открываем попап покупки
+                    }
+                    
+                    // Если все требования выполнены, открываем попап
                     this.selectedCard = {
                         id: card.dataset.id,
                         price: parseInt(card.dataset.price, 10),
@@ -916,6 +1025,12 @@ ${referralUrl}`;
         this.showProfitAnimation(profit);
         this.updateUI();
         this.saveGameData();
+        
+        // Обновляем время последней активности при клике
+        if (this.userId && this.db) {
+            this.db.updateLastActive(this.userId, new Date().toISOString());
+        }
+        
         console.log('handleClick: userId =', this.userId, 'coins =', this.coins, 'energy =', this.currentEnergy, 'spent =', energyCost);
         this.updateBalanceInDB();
         this.spawnRandomProfitSpan(profit);
@@ -1901,11 +2016,19 @@ ${referralUrl}`;
             // Обновляем UI
             this.updateLevelProgressBar();
             
+            // 🔄 Обновляем данные игрока и доступность предметов при изменении уровня
+            this.playerData.level = levelData.level;
+            this.updateItemsAvailability();
+            
             console.log('✅ Level force updated successfully');
         } else {
             console.log('✅ Level is already up to date');
             // Все равно обновляем UI для корректного отображения
             this.updateLevelProgressBar();
+            
+            // 🔄 Обновляем данные игрока на всякий случай
+            this.playerData.level = levelData.level;
+            this.updateItemsAvailability();
         }
     }
 
@@ -1919,16 +2042,18 @@ ${referralUrl}`;
             // Сохранение при потере фокуса окна
             const saveEnergyOnBlur = async () => {
                 if (this.userId && this.db) {
-                    console.log('💾 Saving energy on window blur');
+                    console.log('💾 Saving energy and last_active on window blur');
                     await this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
+                    await this.db.updateLastActive(this.userId, new Date().toISOString());
                 }
             };
             
             // Сохранение при скрытии вкладки
             const saveEnergyOnHidden = async () => {
                 if (document.hidden && this.userId && this.db) {
-                    console.log('💾 Saving energy on tab hide');
+                    console.log('💾 Saving energy and last_active on tab hide');
                     await this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
+                    await this.db.updateLastActive(this.userId, new Date().toISOString());
                 }
             };
             
@@ -1995,6 +2120,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.forceSaveBalance = () => window.labubuGame.forceSaveBalance();
     window.forceUpdateLevel = () => window.labubuGame.forceUpdateLevel();
     window.renderReferralRanks = () => window.labubuGame.renderReferralRanks();
+    
+    // 🔒 Отладочные функции для системы требований
+    window.debugRequirements = () => {
+        const game = window.labubuGame;
+        console.log('=== REQUIREMENTS DEBUG ===');
+        console.log('Player Data:', game.playerData);
+        
+        const allItems = document.querySelectorAll('.box_lb[data-required-level]');
+        allItems.forEach(item => {
+            const requirements = game.checkItemRequirements(item);
+            console.log(`Item ${item.dataset.id}:`, requirements);
+        });
+    };
+    
+    window.testRequirements = (level = 5, referrals = 3) => {
+        const game = window.labubuGame;
+        console.log(`🧪 Testing with level=${level}, referrals=${referrals}`);
+        
+        // Временно устанавливаем тестовые значения
+        game.playerData.level = level;
+        game.playerData.referrals_count = referrals;
+        
+        // Обновляем UI
+        game.updateItemsAvailability();
+        
+        console.log('✅ Requirements updated. Check the cards in the upgrade page.');
+        console.log('To restore real data, reload the page or call window.labubuGame.updateItemsAvailability()');
+    };
     
     // Добавляем обработчики для переключения категорий/страниц
     console.log('🔄 Setting up category switchers...');

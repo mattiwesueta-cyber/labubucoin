@@ -926,7 +926,55 @@ span, div:not(.form), img, svg, path, input {
 	letter-spacing: -0.04em;
 	color: rgba(243, 165, 123, 0.5) !important;
 }
-
+.feat_box .row_profit_lb {
+	margin-top: auto;
+}
+.wrapper_lb  {
+	position: relative;
+	overflow: hidden;
+	border-radius: 1.528vw;
+}
+.required_level {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	backdrop-filter: blur(0.221vw);
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(217, 97, 99, 0.2) 100%), rgba(0, 0, 0, 0.55);
+}
+.required_referals {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	backdrop-filter: blur(0.221vw);
+	pointer-events: none;
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(217, 185, 97, 0.2) 100%), rgba(0, 0, 0, 0.55);
+}
+.blocked_card, .required_referals {
+	pointer-events: none;
+}
+.blocked_card .required_level {
+	display: flex !important;
+}
+.row_required {
+	margin-top: 1.3582vw;
+	text-align: center;
+}
+.row_required span:first-child  {
+	font-size: 2.4992vw;
+	font-family: 'Regular';
+	color: rgba(255, 255, 255, 0.5);
+}
+.row_required span:last-child {
+	font-size: 3.056vw;
+	font-family: 'Medium';
+}
+.blocked_referals .required_referals {
+	display: flex !important;
+}
 
 
 .flexend {
