@@ -2,7 +2,7 @@
 class LabubuGame {
     constructor() {
         this.coins = 0;
-        this.stableIncome = 3.65; // доход в минуту
+        this.stableIncome = 0; // доход в минуту
         this.profitPerClick = 1;
         this.boost = 2;
         this.boostTimeLeft = 0;
@@ -535,7 +535,7 @@ class LabubuGame {
             
             // ВАЖНО: Устанавливаем баланс ВСЕГДА, независимо от других проверок
             this.coins = data.balance || 0;
-            this.stableIncome = data.stable_income || 3.65; // Убираем все лимиты на stableIncome
+            this.stableIncome = data.stable_income || 0; // Убираем все лимиты на stableIncome
             this.profitPerClick = data.profit_per_click || 1;
             this.boost = data.boost || 2;
             this.boostTimeLeft = data.boost_time_left || 0;
@@ -1023,7 +1023,7 @@ ${referralUrl}`;
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
         this.showProfitAnimation(profit);
-        this.updateUI();
+        this.updateUI(); // updateUI() уже включает updateLevelProgressBar()
         this.saveGameData();
         
         // Обновляем время последней активности при клике
@@ -1798,7 +1798,7 @@ ${referralUrl}`;
             const data = await this.db.loadPlayerData(this.userId);
             if (data) {
                 console.log('DB stable_income:', data.stable_income);
-                this.stableIncome = data.stable_income || 3.65;
+                this.stableIncome = data.stable_income || 0;
                 console.log('Set local stable_income to:', this.stableIncome);
                 this.updateUI();
                 console.log('Stable income synced successfully');
