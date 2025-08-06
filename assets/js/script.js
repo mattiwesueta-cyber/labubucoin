@@ -140,28 +140,25 @@ class LabubuGame {
         const calculatedLevel = this.levelsConfig.getLevelByTotalXP(currentXp);
         
         // Получаем прогресс до следующего уровня
-        const progress = this.levelsConfig.getLevelProgress(currentXp);
+        let progress = this.levelsConfig.getLevelProgress(currentXp);
         
-        // 🔍 Детальная отладка прогресса
-        console.log('🔍 Debug calculateLevel:', {
-            coins: this.coins,
-            currentXp,
-            calculatedLevel,
-            'getLevelProgress(95)': this.levelsConfig.getLevelProgress(95),
-            'raw_progress': progress,
-            'progress_type': typeof progress
-        });
+        // 🔧 ВРЕМЕННЫЙ ХАК: Исправляем прогресс для первого уровня
+        if (calculatedLevel === 1 && progress === 0 && currentXp > 0) {
+            // Если система показывает "Coins left", значит мы знаем цель
+            const nextRank = this.levelsConfig.getNextRank(currentXp);
+            if (nextRank && nextRank.requiredCoins) {
+                progress = (currentXp / nextRank.requiredCoins) * 100;
+                console.log(`🔧 Fixed progress for level 1: ${currentXp}/${nextRank.requiredCoins} = ${progress.toFixed(1)}%`);
+            } else {
+                // Fallback: предполагаем что первый уровень до 500 монет
+                progress = (currentXp / 500) * 100;
+                console.log(`🔧 Fallback progress for level 1: ${currentXp}/500 = ${progress.toFixed(1)}%`);
+            }
+        }
         
         // Получаем информацию о текущем уровне
         const levelInfo = this.levelsConfig.getLevelInfo(calculatedLevel);
         const nextLevelInfo = this.levelsConfig.getLevelInfo(calculatedLevel + 1);
-        
-        console.log('📊 Level info debug:', {
-            levelInfo,
-            nextLevelInfo,
-            'levelInfo.totalXpRequired': levelInfo?.totalXpRequired,
-            'nextLevelInfo.totalXpRequired': nextLevelInfo?.totalXpRequired
-        });
         
         let xpToNextLevel = 0;
         if (nextLevelInfo) {
@@ -2253,6 +2250,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log(`XP: ${i}, Level: ${game.levelsConfig.getLevelByTotalXP(i)}, Progress: ${game.levelsConfig.getLevelProgress(i)}%`);
             }
         }
+    };
+    
+    // 🧪 Быстрые тесты прогресс-бара
+    window.quickProgressTest = () => {
+        const game = window.labubuGame;
+        console.log('🧪 QUICK PROGRESS TEST');
+        
+        const testValues = [0, 50, 100, 150, 200, 300, 500];
+        testValues.forEach(coins => {
+            game.coins = coins;
+            game.updateLevelProgressBar();
+            console.log(`${coins} coins → Progress visible`);
+        });
+        
+        console.log('✅ Test complete - check progress bar changes!');
     };
     
     // 🔧 Функция для пересоздания системы уровней
