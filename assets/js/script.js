@@ -1,4 +1,12 @@
 // 🎮 LabubuCoin Game Script
+// Mute console.log output
+(() => {
+    try {
+        if (typeof console !== 'undefined' && typeof console.log === 'function') {
+            console.log = function() {};
+        }
+    } catch (_) {}
+})();
 class LabubuGame {
     constructor() {
         this.coins = 0;
@@ -1275,13 +1283,13 @@ ${referralUrl}`;
         if (num < 1000) {
             return num.toString();
         } else if (num < 1000000) {
-            return num.toLocaleString('ru-RU');
+            return (num / 1000).toFixed(2).replace('.', ',') + 'К';
         } else if (num < 1000000000) {
-            return (num / 1000000).toFixed(2) + 'М';
+            return (num / 1000000).toFixed(2).replace('.', ',') + 'М';
         } else if (num < 1000000000000) {
-            return (num / 1000000000).toFixed(2) + 'B';
+            return (num / 1000000000).toFixed(2).replace('.', ',') + 'B';
         } else {
-            return (num / 1000000000000).toFixed(2) + 'T';
+            return (num / 1000000000000).toFixed(2).replace('.', ',') + 'T';
         }
     }
 

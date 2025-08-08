@@ -981,6 +981,9 @@ span, div:not(.form), img, svg, path, input {
 .blocked_referals .required_referals {
 	display: flex !important;
 }
+.popout_confirm .wrapper_lb {
+	pointer-events: none;
+}
 
 
 .flexend {
