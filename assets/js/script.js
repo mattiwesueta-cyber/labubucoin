@@ -604,6 +604,9 @@ class LabubuGame {
 
             console.log('💾 Energy loaded from DB:', this.currentEnergy + '/' + this.maxEnergy);
 
+            // Сразу обновляем UI после загрузки ключевых полей, чтобы прогресс-бар и ранги не ждали последующих шагов
+            this.updateUI();
+
             // Восстанавливаем энергию за время отсутствия
             if (data.last_active) {
                 const lastActiveTime = new Date(data.last_active).getTime();

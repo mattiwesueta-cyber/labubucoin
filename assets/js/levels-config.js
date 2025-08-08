@@ -18,25 +18,18 @@ class LevelsConfig {
         const growthRate = 1.15;         // Коэффициент роста (15% за каждый уровень)
         const maxLevel = 100;            // Максимальный уровень
         
+        // ВАЖНО: totalXpRequired должен означать общий XP, необходимый ДЛЯ ДОСТИЖЕНИЯ этого уровня,
+        // поэтому для уровня 1 он равен 0 (старт), а не 100. Иначе прогресс на первом уровне будет 0% до 100 XP.
+        let totalXpSoFar = 0;
+        
         for (let i = 1; i <= maxLevel; i++) {
-            let xpRequired;
-            let totalXpRequired = 0;
-            
-            if (i === 1) {
-                xpRequired = baseXP;
-            } else {
-                // Экспоненциальный рост с учетом коэффициента
-                xpRequired = Math.floor(baseXP * Math.pow(growthRate, i - 1));
-            }
-            
-            // Вычисляем общий XP, необходимый для достижения этого уровня
-            for (let j = 1; j <= i; j++) {
-                if (j === 1) {
-                    totalXpRequired += baseXP;
-                } else {
-                    totalXpRequired += Math.floor(baseXP * Math.pow(growthRate, j - 1));
-                }
-            }
+            // XP, необходимый для ПЕРЕХОДА на следующий уровень из текущего
+            const xpRequired = (i === 1)
+                ? baseXP
+                : Math.floor(baseXP * Math.pow(growthRate, i - 1));
+
+            // Общий XP, необходимый для ДОСТИЖЕНИЯ текущего уровня i
+            const totalXpRequired = totalXpSoFar;
             
             // Определяем ранг по общему количеству XP (используем XP как монеты)
             const rank = this.getRankByCoins(totalXpRequired);
@@ -52,6 +45,9 @@ class LevelsConfig {
                 rewards: this.getLevelRewards(i, totalXpRequired), // Награды за достижение уровня
                 title: this.getLevelTitle(i, rank)
             });
+
+            // Накопим XP для следующего уровня
+            totalXpSoFar += xpRequired;
         }
         
         return levels;
