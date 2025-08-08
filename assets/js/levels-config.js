@@ -12,44 +12,30 @@ class LevelsConfig {
     // Генерация конфигурации уровней
     generateLevelsConfig() {
         const levels = [];
-        
-        // Базовые параметры для расчета
-        const baseXP = 100;              // Базовое количество XP для первого уровня
-        const growthRate = 1.15;         // Коэффициент роста (15% за каждый уровень)
-        const maxLevel = 100;            // Максимальный уровень
-        
-        // ВАЖНО: totalXpRequired должен означать общий XP, необходимый ДЛЯ ДОСТИЖЕНИЯ этого уровня,
-        // поэтому для уровня 1 он равен 0 (старт), а не 100. Иначе прогресс на первом уровне будет 0% до 100 XP.
-        let totalXpSoFar = 0;
-        
-        for (let i = 1; i <= maxLevel; i++) {
-            // XP, необходимый для ПЕРЕХОДА на следующий уровень из текущего
-            const xpRequired = (i === 1)
-                ? baseXP
-                : Math.floor(baseXP * Math.pow(growthRate, i - 1));
 
-            // Общий XP, необходимый для ДОСТИЖЕНИЯ текущего уровня i
-            const totalXpRequired = totalXpSoFar;
-            
-            // Определяем ранг по общему количеству XP (используем XP как монеты)
-            const rank = this.getRankByCoins(totalXpRequired);
-            
+        // Делает уровни жёстко привязанными к порогам рангов (coins)
+        // Уровень 1 → requiredCoins = 0; Уровень 2 → 500; далее по списку рангов
+        for (let i = 0; i < this.ranks.length; i++) {
+            const currentRank = this.ranks[i];
+            const nextRank = this.ranks[i + 1] || null;
+            const totalXpRequired = currentRank.requiredCoins; // XP (coins) для достижения этого уровня
+            const xpRequired = nextRank
+                ? nextRank.requiredCoins - currentRank.requiredCoins // Сколько нужно от текущего до следующего уровня
+                : 0; // последний уровень
+
             levels.push({
-                level: i,
-                xpRequired: xpRequired,           // XP для перехода на этот уровень
-                totalXpRequired: totalXpRequired, // Общий XP для достижения уровня
-                rank: rank.name,
-                rankColor: rank.color,
-                rankIcon: rank.icon,
-                rankId: rank.id,
-                rewards: this.getLevelRewards(i, totalXpRequired), // Награды за достижение уровня
-                title: this.getLevelTitle(i, rank)
+                level: i + 1,
+                xpRequired: xpRequired,
+                totalXpRequired: totalXpRequired,
+                rank: currentRank.name,
+                rankColor: currentRank.color,
+                rankIcon: currentRank.icon,
+                rankId: currentRank.id,
+                rewards: this.getLevelRewards(i + 1, totalXpRequired),
+                title: this.getLevelTitle(i + 1, currentRank)
             });
-
-            // Накопим XP для следующего уровня
-            totalXpSoFar += xpRequired;
         }
-        
+
         return levels;
     }
 
