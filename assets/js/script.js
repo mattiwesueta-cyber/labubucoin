@@ -1033,6 +1033,11 @@ ${referralUrl}`;
         // Расходуем energyCost единиц энергии за клик (равно profitPerClick)
         this.currentEnergy = Math.max(0, this.currentEnergy - energyCost);
         
+        // Вибрация устройства при успешном клике (если поддерживается)
+        if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+            navigator.vibrate(15);
+        }
+
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
         this.showProfitAnimation(profit);
