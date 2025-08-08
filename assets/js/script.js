@@ -1057,13 +1057,17 @@ ${referralUrl}`;
     triggerClickHaptic() {
         try {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-                // Лёгкий отклик + изменение выбора
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                // Более сильный отклик
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+                // Короткое усиление следом
+                setTimeout(() => {
+                    try { window.Telegram.WebApp.HapticFeedback.impactOccurred('rigid'); } catch (_) {}
+                }, 30);
                 return;
             }
             if (navigator && typeof navigator.vibrate === 'function') {
-                navigator.vibrate(15);
+                // Умеренно сильный паттерн
+                navigator.vibrate([30, 15, 30]);
             }
         } catch (_) {
             // игнорируем ошибки хаптика
@@ -2149,6 +2153,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.forceSaveBalance = () => window.labubuGame.forceSaveBalance();
     window.forceUpdateLevel = () => window.labubuGame.forceUpdateLevel();
     window.renderReferralRanks = () => window.labubuGame.renderReferralRanks();
+    
+    // Отключаем жесты масштабирования/даблтап зума
+    try {
+        // Для Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.disableVerticalSwipes && window.Telegram.WebApp.disableVerticalSwipes();
+        }
+        // Глобально блокируем Ctrl/Cmd + колесо и жесты
+        document.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        // Блокируем двойной тап-зуум
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+        // Блокируем жест pinch-to-zoom
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+        document.addEventListener('gesturechange', (e) => e.preventDefault());
+        document.addEventListener('gestureend', (e) => e.preventDefault());
+    } catch (_) {}
     
     // 🔒 Отладочные функции для системы требований
     window.debugRequirements = () => {
