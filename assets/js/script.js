@@ -1257,9 +1257,12 @@ ${referralUrl}`;
     // Функция форматирования больших чисел
     formatNumber(num) {
         if (num < 100) {
-            return num.toFixed(2);
+            // Убираем ненужные нули для маленьких чисел
+            const formatted = num.toFixed(2);
+            return formatted.replace(/\.?0+$/, '');
         } else if (num < 1000) {
-            return num.toFixed(1);
+            const formatted = num.toFixed(1);
+            return formatted.replace(/\.?0+$/, '');
         } else if (num < 1000000) {
             const formatted = (num / 1000).toFixed(1);
             return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'К' : formatted + 'К';
