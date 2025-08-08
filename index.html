@@ -3,6 +3,7 @@
 
 <head>
 	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 	<link type="text/css" rel="stylesheet" href="assets/css/style.css">
 	<link type="text/css" rel="stylesheet" href="assets/css/fonts.css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
@@ -12,6 +13,40 @@
 	<script src="assets/js/db.js"></script>
 	<script src="assets/js/levels-config.js"></script>
 	<script src="assets/js/script.js"></script>
+
+	<script>
+	// Disable zoom (pinch, double-tap, Ctrl+wheel, Ctrl +/-)
+	(function() {
+	  // Prevent pinch-zoom (Safari/iOS gesture events)
+	  ['gesturestart','gesturechange','gestureend'].forEach(evt => {
+	    document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive: false });
+	  });
+
+	  // Prevent double-tap zoom
+	  let lastTouchEnd = 0;
+	  document.addEventListener('touchend', function(e) {
+	    const now = Date.now();
+	    if (now - lastTouchEnd <= 300) {
+	      e.preventDefault();
+	    }
+	    lastTouchEnd = now;
+	  }, { passive: false });
+
+	  // Prevent Ctrl/Cmd + wheel zoom
+	  document.addEventListener('wheel', function(e) {
+	    if (e.ctrlKey || e.metaKey) {
+	      e.preventDefault();
+	    }
+	  }, { passive: false });
+
+	  // Prevent Ctrl/Cmd + +/-/=
+	  document.addEventListener('keydown', function(e) {
+	    if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '=')) {
+	      e.preventDefault();
+	    }
+	  });
+	})();
+	</script>
 
 </head>
 	<body>
@@ -117,7 +152,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="main_page" style="display: ;">
+            <div class="main_page">
 				<div class="bg_under_circle"></div>
 				<div class="labubu_wrapper_main_page">
 					<div class="labubu_cont jlcn">
@@ -185,7 +220,7 @@
 						<span>Hat</span>
 					</div>
 				</div>
-				<div class="overflow_u w100" style="display: ;">
+                <div class="overflow_u w100">
 					<div class="wrapper_lb blocked_card clmn">
 						<div class="box_lb red_box clmn" 
 							 data-id="love_suit" 
