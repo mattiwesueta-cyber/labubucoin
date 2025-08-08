@@ -1263,11 +1263,25 @@ ${referralUrl}`;
     }
 
     // Функция форматирования больших чисел
-    formatNumber(num) {
+    formatNumberCoins(num) {
         if (num < 1000) {
             return num.toString();
         } else {
             return num.toLocaleString('ru-RU');
+        }
+    }
+
+    formatNumber(num) {
+        if (num < 1000) {
+            return num.toString();
+        } else if (num < 1000000) {
+            return num.toLocaleString('ru-RU');
+        } else if (num < 1000000000) {
+            return (num / 1000000).toFixed(2) + 'М';
+        } else if (num < 1000000000000) {
+            return (num / 1000000000).toFixed(2) + 'B';
+        } else {
+            return (num / 1000000000000).toFixed(2) + 'T';
         }
     }
 
@@ -1277,7 +1291,7 @@ ${referralUrl}`;
         // Отображаем баланс с форматированием (К, М, Б, Т)
         const balanceElement = document.querySelector('.flex_balance span');
         if (balanceElement) {
-            balanceElement.textContent = this.formatNumber(this.coins);
+            balanceElement.textContent = this.formatNumberCoins(this.coins);
         }
 
         const stableIncomeElement = document.querySelector('.flex_i span');
