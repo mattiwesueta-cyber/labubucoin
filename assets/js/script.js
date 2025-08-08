@@ -1273,7 +1273,7 @@ ${referralUrl}`;
             return Math.floor(num).toString();
         } else if (num < 1000000) {
             // Для чисел от 1000 до 999999 показываем с точками как разделителями тысяч
-            return num.toLocaleString('ru-RU');
+            return num.toLocaleString('de-DE');
         } else if (num < 1000000000) {
             const formatted = (num / 1000000).toFixed(2);
             return formatted.replace(/\.?0+$/, '') + 'М';
