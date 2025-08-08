@@ -1272,17 +1272,17 @@ ${referralUrl}`;
             const formatted = num.toFixed(1);
             return formatted.replace(/\.?0+$/, '');
         } else if (num < 1000000) {
-            const formatted = (num / 1000).toFixed(1);
-            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'К' : formatted + 'К';
+            const formatted = (num / 1000).toFixed(3);
+            return formatted.replace(/\.?0+$/, '') + 'К';
         } else if (num < 1000000000) {
-            const formatted = (num / 1000000).toFixed(1);
-            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'М' : formatted + 'М';
+            const formatted = (num / 1000000).toFixed(3);
+            return formatted.replace(/\.?0+$/, '') + 'М';
         } else if (num < 1000000000000) {
-            const formatted = (num / 1000000000).toFixed(1);
-            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'Б' : formatted + 'Б';
+            const formatted = (num / 1000000000).toFixed(3);
+            return formatted.replace(/\.?0+$/, '') + 'B';
         } else {
-            const formatted = (num / 1000000000000).toFixed(1);
-            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'Т' : formatted + 'Т';
+            const formatted = (num / 1000000000000).toFixed(3);
+            return formatted.replace(/\.?0+$/, '') + 'T';
         }
     }
 
