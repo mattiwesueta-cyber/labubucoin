@@ -68,8 +68,7 @@ class LabubuGame {
                     resolve();
                 } else if (attempts >= maxAttempts) {
                     console.error('❌ Failed to load levels config after maximum attempts');
-                    // Create a fallback config to prevent the app from breaking
-                    this.createFallbackLevelsConfig();
+                    // Продолжаем без конфига уровней (UI пропустит прогресс-бар)
                     resolve();
                 } else {
                     setTimeout(checkConfig, 100);
@@ -79,53 +78,7 @@ class LabubuGame {
         });
     }
 
-    // Создание резервной конфигурации уровней
-    createFallbackLevelsConfig() {
-        console.log('🛠️ Creating fallback levels config...');
-        this.levelsConfig = {
-            levels: [
-                { level: 1, totalXpRequired: 0, rank: 'Bronze 1', rankColor: '#CD7F32' },
-                { level: 2, totalXpRequired: 100, rank: 'Bronze 1', rankColor: '#CD7F32' },
-                { level: 3, totalXpRequired: 250, rank: 'Bronze 2', rankColor: '#CD7F32' }
-            ],
-            ranks: [
-                { id: 'bronze_1', name: 'Bronze 1', requiredCoins: 0, color: '#CD7F32', icon: '🥉' },
-                { id: 'bronze_2', name: 'Bronze 2', requiredCoins: 250, color: '#CD7F32', icon: '🥉' }
-            ],
-            getLevelByTotalXP: (xp) => {
-                if (xp >= 250) return 3;
-                if (xp >= 100) return 2;
-                return 1;
-            },
-            getLevelProgress: (xp) => {
-                // Простой расчет прогресса
-                if (xp >= 250) return 0; // Максимальный уровень
-                if (xp >= 100) {
-                    // Прогресс от уровня 2 к уровню 3 (100-250 XP)
-                    return ((xp - 100) / (250 - 100)) * 100;
-                }
-                // Прогресс от уровня 1 к уровню 2 (0-100 XP)
-                return (xp / 100) * 100;
-            },
-            getRankByCoins: (coins) => {
-                if (coins >= 250) return { id: 'bronze_2', name: 'Bronze 2', requiredCoins: 250, color: '#CD7F32', icon: '🥉' };
-                return { id: 'bronze_1', name: 'Bronze 1', requiredCoins: 0, color: '#CD7F32', icon: '🥉' };
-            },
-            getLevelInfo: (level) => {
-                const levels = [
-                    { level: 1, totalXpRequired: 0, rank: 'Bronze 1', rankColor: '#CD7F32' },
-                    { level: 2, totalXpRequired: 100, rank: 'Bronze 1', rankColor: '#CD7F32' },
-                    { level: 3, totalXpRequired: 250, rank: 'Bronze 2', rankColor: '#CD7F32' }
-                ];
-                return levels.find(l => l.level === level) || levels[0];
-            },
-            getNextRank: (coins) => {
-                if (coins < 250) return { id: 'bronze_2', name: 'Bronze 2', requiredCoins: 250, color: '#CD7F32', icon: '🥉' };
-                return null; // Максимальный ранг
-            }
-        };
-        console.log('✅ Fallback levels config created with proper progress calculation');
-    }
+    // (Удалено) Резервная конфигурация уровней
 
     // Вычисление уровня игрока на основе баланса
     calculateLevel() {
