@@ -1036,6 +1036,9 @@ ${referralUrl}`;
         // Вибрация устройства при успешном клике (если поддерживается)
         if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
             navigator.vibrate(15);
+        } else if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+            // Фолбэк для Telegram WebApp на iOS/устройствах без navigator.vibrate
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
 
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
