@@ -142,20 +142,21 @@ class LabubuGame {
         const rankElement = document.getElementById('level_rank');
         const progressTextElement = document.getElementById('level_progress');
         
-        // Обновляем ширину прогресс-бара от 0 до 100%
+        // Обновляем ширину прогресс-бара от 0 до 100% по прогрессу РАНГА (а не абстрактного уровня)
         if (progressElement) {
-            progressElement.style.width = `${levelData.progress}%`;
-            console.log('🎨 Progress bar updated to:', levelData.progress.toFixed(1) + '%');
+            const rankProgress = this.levelsConfig.getRankProgress(this.coins);
+            progressElement.style.width = `${rankProgress}%`;
+            console.log('🎨 Progress bar (rank) updated to:', rankProgress.toFixed(1) + '%');
         }
         
-        // Обновляем текст ранга и уровня
-        if (rankElement && levelData.levelInfo) {
+        // Обновляем текст ранга
+        if (rankElement) {
             const rankInfo = this.levelsConfig.getRankByCoins(this.coins);
             rankElement.textContent = `${rankInfo.icon} ${rankInfo.name}`;
             console.log('🏆 Rank updated to:', `${rankInfo.icon} ${rankInfo.name}`);
         }
         
-        // Обновляем прогресс до следующего ранга
+        // Обновляем текст прогресса: монеты до следующего ранга и текущий баланс
         if (progressTextElement) {
             const currentRank = this.levelsConfig.getRankByCoins(this.coins);
             const nextRank = this.levelsConfig.getNextRank(this.coins);
@@ -163,8 +164,8 @@ class LabubuGame {
             if (!nextRank) {
                 progressTextElement.textContent = 'MAX RANK';
             } else {
-                const coinsToNextRank = nextRank.requiredCoins - this.coins;
-                progressTextElement.textContent = `${this.formatNumber(Math.floor(coinsToNextRank))} Coins left`;
+                const coinsToNextRank = Math.max(0, nextRank.requiredCoins - this.coins);
+                progressTextElement.textContent = `${this.formatNumber(Math.floor(this.coins))} / ${this.formatNumber(nextRank.requiredCoins)}`;
             }
             console.log('📊 Progress text updated to:', progressTextElement.textContent);
         }
