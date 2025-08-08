@@ -1266,14 +1266,8 @@ ${referralUrl}`;
     formatNumber(num) {
         if (num < 1000) {
             return num.toString();
-        } else if (num < 1000000) {
-            return num.toLocaleString('ru-RU');
-        } else if (num < 1000000000) {
-            return (num / 1000000).toFixed(2) + 'М';
-        } else if (num < 1000000000000) {
-            return (num / 1000000000).toFixed(2) + 'B';
         } else {
-            return (num / 1000000000000).toFixed(2) + 'T';
+            return num.toLocaleString('ru-RU');
         }
     }
 
