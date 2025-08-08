@@ -1272,16 +1272,16 @@ ${referralUrl}`;
             // Для чисел от 100 до 999 показываем целые числа без дробной части
             return Math.floor(num).toString();
         } else if (num < 1000000) {
-            const formatted = (num / 1000).toFixed(2);
-            return formatted.replace(/\.?0+$/, '') + 'К';
+            // Для чисел от 1000 до 999999 показываем с точками как разделителями тысяч
+            return num.toLocaleString('ru-RU');
         } else if (num < 1000000000) {
-            const formatted = (num / 1000000).toFixed(3);
+            const formatted = (num / 1000000).toFixed(2);
             return formatted.replace(/\.?0+$/, '') + 'М';
         } else if (num < 1000000000000) {
-            const formatted = (num / 1000000000).toFixed(3);
+            const formatted = (num / 1000000000).toFixed(2);
             return formatted.replace(/\.?0+$/, '') + 'B';
         } else {
-            const formatted = (num / 1000000000000).toFixed(3);
+            const formatted = (num / 1000000000000).toFixed(2);
             return formatted.replace(/\.?0+$/, '') + 'T';
         }
     }
