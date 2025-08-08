@@ -1033,7 +1033,7 @@ ${referralUrl}`;
         // Расходуем energyCost единиц энергии за клик (равно profitPerClick)
         this.currentEnergy = Math.max(0, this.currentEnergy - energyCost);
         
-        // Вибрация/хаптик при успешном клике
+        // Лёгкий хаптик (базовый вариант)
         this.triggerClickHaptic();
         
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
@@ -1057,17 +1057,13 @@ ${referralUrl}`;
     triggerClickHaptic() {
         try {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-                // Более сильный отклик
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
-                // Короткое усиление следом
-                setTimeout(() => {
-                    try { window.Telegram.WebApp.HapticFeedback.impactOccurred('rigid'); } catch (_) {}
-                }, 30);
+                // Базовый лёгкий отклик
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                window.Telegram.WebApp.HapticFeedback.selectionChanged();
                 return;
             }
             if (navigator && typeof navigator.vibrate === 'function') {
-                // Умеренно сильный паттерн
-                navigator.vibrate([30, 15, 30]);
+                navigator.vibrate(15);
             }
         } catch (_) {
             // игнорируем ошибки хаптика
@@ -1281,9 +1277,9 @@ ${referralUrl}`;
     // Функция форматирования больших чисел
     formatNumber(num) {
         if (num < 100) {
-            return num.toFixed(2);
+            return Number(num.toFixed(2)).toString();
         } else if (num < 1000) {
-            return num.toFixed(1);
+            return Number(num.toFixed(1)).toString();
         } else if (num < 1000000) {
             const formatted = (num / 1000).toFixed(1);
             return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'К' : formatted + 'К';
