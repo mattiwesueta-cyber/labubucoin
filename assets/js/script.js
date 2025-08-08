@@ -1022,15 +1022,13 @@ ${referralUrl}`;
     }
 
     handleClick() {
-        // Проверяем, есть ли достаточно энергии для клика
+        // Энергия больше не блокирует быстрые клики
         const energyCost = this.profitPerClick;
         if (this.currentEnergy < energyCost) {
-            console.log('❌ Недостаточно энергии для клика. Нужно:', energyCost, 'Есть:', this.currentEnergy);
+            // Показываем предупреждение, но клики не блокируем
             this.showEnergyWarning();
-            return;
         }
-
-        // Расходуем energyCost единиц энергии за клик (равно profitPerClick)
+        // Списываем энергию без блокировки клика
         this.currentEnergy = Math.max(0, this.currentEnergy - energyCost);
         
         // Лёгкий хаптик (базовый вариант)
@@ -1040,7 +1038,7 @@ ${referralUrl}`;
         this.coins += profit;
         this.showProfitAnimation(profit);
         this.updateUI(); // updateUI() уже включает updateLevelProgressBar()
-        this.saveGameData();
+        // Не трогаем БД на каждом клике, чтобы не было задержек. Сохраним батчем в онлайн-таймере
         
         // Обновляем время последней активности при клике
         if (this.userId && this.db) {
