@@ -1022,23 +1022,22 @@ ${referralUrl}`;
     }
 
     handleClick() {
-        // Энергия больше не блокирует быстрые клики
+        // Проверяем, есть ли достаточно энергии для клика
         const energyCost = this.profitPerClick;
         if (this.currentEnergy < energyCost) {
-            // Показываем предупреждение, но клики не блокируем
+            console.log('❌ Недостаточно энергии для клика. Нужно:', energyCost, 'Есть:', this.currentEnergy);
             this.showEnergyWarning();
+            return;
         }
-        // Списываем энергию без блокировки клика
+
+        // Расходуем energyCost единиц энергии за клик (равно profitPerClick)
         this.currentEnergy = Math.max(0, this.currentEnergy - energyCost);
-        
-        // Лёгкий хаптик (базовый вариант)
-        this.triggerClickHaptic();
         
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
         this.showProfitAnimation(profit);
         this.updateUI(); // updateUI() уже включает updateLevelProgressBar()
-        // Не трогаем БД на каждом клике, чтобы не было задержек. Сохраним батчем в онлайн-таймере
+        this.saveGameData();
         
         // Обновляем время последней активности при клике
         if (this.userId && this.db) {
@@ -1049,23 +1048,6 @@ ${referralUrl}`;
         this.updateBalanceInDB();
         this.spawnRandomProfitSpan(profit);
         this.animateCircleBg();
-    }
-
-    // Лёгкая вибрация для клика (Telegram WebApp или нативный vibrate)
-    triggerClickHaptic() {
-        try {
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-                // Базовый лёгкий отклик
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-                window.Telegram.WebApp.HapticFeedback.selectionChanged();
-                return;
-            }
-            if (navigator && typeof navigator.vibrate === 'function') {
-                navigator.vibrate(15);
-            }
-        } catch (_) {
-            // игнорируем ошибки хаптика
-        }
     }
 
     // Показать предупреждение о нехватке энергии
@@ -1275,9 +1257,9 @@ ${referralUrl}`;
     // Функция форматирования больших чисел
     formatNumber(num) {
         if (num < 100) {
-            return Number(num.toFixed(2)).toString();
+            return num.toFixed(2);
         } else if (num < 1000) {
-            return Number(num.toFixed(1)).toString();
+            return num.toFixed(1);
         } else if (num < 1000000) {
             const formatted = (num / 1000).toFixed(1);
             return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'К' : formatted + 'К';
@@ -2147,33 +2129,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.forceSaveBalance = () => window.labubuGame.forceSaveBalance();
     window.forceUpdateLevel = () => window.labubuGame.forceUpdateLevel();
     window.renderReferralRanks = () => window.labubuGame.renderReferralRanks();
-    
-    // Отключаем жесты масштабирования/даблтап зума
-    try {
-        // Для Telegram WebApp
-        if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.disableVerticalSwipes && window.Telegram.WebApp.disableVerticalSwipes();
-        }
-        // Глобально блокируем Ctrl/Cmd + колесо и жесты
-        document.addEventListener('wheel', (e) => {
-            if (e.ctrlKey) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-        // Блокируем двойной тап-зуум
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', (e) => {
-            const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, { passive: false });
-        // Блокируем жест pinch-to-zoom
-        document.addEventListener('gesturestart', (e) => e.preventDefault());
-        document.addEventListener('gesturechange', (e) => e.preventDefault());
-        document.addEventListener('gestureend', (e) => e.preventDefault());
-    } catch (_) {}
     
     // 🔒 Отладочные функции для системы требований
     window.debugRequirements = () => {
