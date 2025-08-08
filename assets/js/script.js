@@ -1033,6 +1033,9 @@ ${referralUrl}`;
         // Расходуем energyCost единиц энергии за клик (равно profitPerClick)
         this.currentEnergy = Math.max(0, this.currentEnergy - energyCost);
         
+        // Вибрация/хаптик при успешном клике
+        this.triggerClickHaptic();
+        
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
         this.showProfitAnimation(profit);
@@ -1048,6 +1051,23 @@ ${referralUrl}`;
         this.updateBalanceInDB();
         this.spawnRandomProfitSpan(profit);
         this.animateCircleBg();
+    }
+
+    // Лёгкая вибрация для клика (Telegram WebApp или нативный vibrate)
+    triggerClickHaptic() {
+        try {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                // Лёгкий отклик + изменение выбора
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                window.Telegram.WebApp.HapticFeedback.selectionChanged();
+                return;
+            }
+            if (navigator && typeof navigator.vibrate === 'function') {
+                navigator.vibrate(15);
+            }
+        } catch (_) {
+            // игнорируем ошибки хаптика
+        }
     }
 
     // Показать предупреждение о нехватке энергии
