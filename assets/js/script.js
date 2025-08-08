@@ -1264,25 +1264,16 @@ ${referralUrl}`;
 
     // Функция форматирования больших чисел
     formatNumber(num) {
-        if (num < 100) {
-            // Убираем ненужные нули для маленьких чисел
-            const formatted = num.toFixed(2);
-            return formatted.replace(/\.?0+$/, '');
-        } else if (num < 1000) {
-            // Для чисел от 100 до 999 показываем целые числа без дробной части
-            return Math.floor(num).toString();
+        if (num < 1000) {
+            return num.toString();
         } else if (num < 1000000) {
-            // Для чисел от 1000 до 999999 показываем с точками как разделителями тысяч
-            return num.toLocaleString('de-DE');
+            return num.toLocaleString('ru-RU');
         } else if (num < 1000000000) {
-            const formatted = (num / 1000000).toFixed(2);
-            return formatted.replace(/\.?0+$/, '') + 'М';
+            return (num / 1000000).toFixed(2) + 'М';
         } else if (num < 1000000000000) {
-            const formatted = (num / 1000000000).toFixed(2);
-            return formatted.replace(/\.?0+$/, '') + 'B';
+            return (num / 1000000000).toFixed(2) + 'B';
         } else {
-            const formatted = (num / 1000000000000).toFixed(2);
-            return formatted.replace(/\.?0+$/, '') + 'T';
+            return (num / 1000000000000).toFixed(2) + 'T';
         }
     }
 
