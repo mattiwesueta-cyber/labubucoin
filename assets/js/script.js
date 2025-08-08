@@ -1831,22 +1831,18 @@ ${referralUrl}`;
         // Останавливаем предыдущий интервал если есть
         this.stopOnlineIncome();
         
-        if (this.stableIncome <= 0) {
-            console.log('Stable income is 0, not starting online income');
-            return;
-        }
-        
-        console.log('🚀 Starting online income:', this.stableIncome, 'per minute');
-        
-        // Доход за секунду = stable_income / 60
-        const incomePerSecond = this.stableIncome / 60;
+        console.log('🚀 Starting timers (online income + energy regen). Stable income per min:', this.stableIncome);
         
         this.onlineIncomeInterval = setInterval(() => {
-            if (this.isOnline && this.stableIncome > 0) {
+            if (this.isOnline) {
                 const oldCoins = this.coins;
                 
-                // Добавляем доход за секунду
-                this.coins += incomePerSecond;
+                // Доход за секунду = stable_income / 60 (может быть 0)
+                const incomePerSecond = this.stableIncome / 60;
+                if (this.stableIncome > 0) {
+                    // Добавляем доход за секунду только если доход положительный
+                    this.coins += incomePerSecond;
+                }
                 
                 // Восстанавливаем энергию (profitPerClick единиц в секунду)
                 if (this.currentEnergy < this.maxEnergy) {
