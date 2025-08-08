@@ -1269,10 +1269,10 @@ ${referralUrl}`;
             const formatted = num.toFixed(2);
             return formatted.replace(/\.?0+$/, '');
         } else if (num < 1000) {
-            const formatted = num.toFixed(1);
-            return formatted.replace(/\.?0+$/, '');
+            // Для чисел от 100 до 999 показываем целые числа без дробной части
+            return Math.floor(num).toString();
         } else if (num < 1000000) {
-            const formatted = (num / 1000).toFixed(3);
+            const formatted = (num / 1000).toFixed(2);
             return formatted.replace(/\.?0+$/, '') + 'К';
         } else if (num < 1000000000) {
             const formatted = (num / 1000000).toFixed(3);
