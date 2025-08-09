@@ -221,7 +221,7 @@ class LabubuGame {
 
     // 🎨 Обновление визуального состояния карточек на основе требований
     updateItemsAvailability() {
-        const allItems = document.querySelectorAll('.box_lb[data-required-level]');
+        const allItems = document.querySelectorAll('.box_lb[data-required-level], .box_lb[data-required-referrals]');
         
         allItems.forEach(itemElement => {
             const wrapper = itemElement.closest('.wrapper_lb');
@@ -232,23 +232,16 @@ class LabubuGame {
             // Сброс всех классов блокировки
             wrapper.classList.remove('blocked_card', 'blocked_referals');
             
+            // Обновляем отображение требований в UI (создадим блоки при необходимости)
+            this.ensureRequirementBlocks(wrapper);
+            this.updateRequirementDisplay(wrapper, requirements);
+            
             if (!requirements.canBuy) {
                 if (!requirements.hasLevel) {
-                    // Блокируем по уровню
                     wrapper.classList.add('blocked_card');
-                    console.log(`🔒 Item ${itemElement.dataset.id} blocked by level requirement:`, 
-                               requirements.playerLevel, '/', requirements.requiredLevel);
                 } else if (!requirements.hasReferrals) {
-                    // Блокируем по рефералам
                     wrapper.classList.add('blocked_referals');
-                    console.log(`🔒 Item ${itemElement.dataset.id} blocked by referrals requirement:`, 
-                               requirements.playerReferrals, '/', requirements.requiredReferrals);
                 }
-                
-                // Обновляем отображение требований в UI
-                this.updateRequirementDisplay(wrapper, requirements);
-            } else {
-                console.log(`✅ Item ${itemElement.dataset.id} is available for purchase`);
             }
         });
     }
@@ -256,15 +249,67 @@ class LabubuGame {
     // 📝 Обновление отображения требований в UI карточки
     updateRequirementDisplay(wrapper, requirements) {
         // Обновляем required level
-        const levelRequirement = wrapper.querySelector('.required_level .row_required span:last-child');
-        if (levelRequirement) {
-            // Здесь можно было бы показать конкретный уровень, но пока оставим как есть
+        const levelBlock = wrapper.querySelector('.required_level');
+        const levelRequirementValue = wrapper.querySelector('.required_level .row_required span:last-child');
+        if (levelRequirementValue) {
+            let requiredLevelText = '';
+            if (this.levelsConfig && typeof requirements.requiredLevel === 'number') {
+                const rank = this.levelsConfig.getRankByLevel(requirements.requiredLevel);
+                requiredLevelText = rank ? rank.name : `Level ${requirements.requiredLevel}`;
+            } else {
+                requiredLevelText = `Level ${requirements.requiredLevel || 1}`;
+            }
+            levelRequirementValue.textContent = requiredLevelText;
         }
-        
+        if (levelBlock) {
+            levelBlock.style.display = requirements.hasLevel ? 'none' : '';
+        }
+
         // Обновляем required referrals
-        const referralsRequirement = wrapper.querySelector('.required_referals .row_required span:last-child');
-        if (referralsRequirement) {
-            referralsRequirement.textContent = requirements.requiredReferrals;
+        const referralsBlock = wrapper.querySelector('.required_referals');
+        const referralsRequirementValue = wrapper.querySelector('.required_referals .row_required span:last-child');
+        if (referralsRequirementValue) {
+            referralsRequirementValue.textContent = requirements.requiredReferrals;
+        }
+        if (referralsBlock) {
+            referralsBlock.style.display = requirements.hasReferrals ? 'none' : '';
+        }
+    }
+
+    // Гарантируем наличие блоков required_level и required_referals в карточке
+    ensureRequirementBlocks(wrapper) {
+        // required_level
+        if (!wrapper.querySelector('.required_level')) {
+            const levelDiv = document.createElement('div');
+            levelDiv.className = 'required_level jlcn clmn';
+            levelDiv.style.display = 'none';
+            levelDiv.innerHTML = `
+                <svg width="31" height="30" viewBox="0 0 31 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M15.5 4.06104C13.0837 4.06104 11.125 6.0198 11.125 8.43604V10.3135H19.875V8.43604C19.875 6.0198 17.9162 4.06104 15.5 4.06104ZM8.625 8.43604V10.3135H8C6.1014 10.3135 4.56233 11.8527 4.5625 13.7513L4.56354 25.0013C4.56371 26.8996 6.10269 28.4385 8.00104 28.4385H22.9997C24.8982 28.4385 26.4372 26.8995 26.4372 25.001V13.751C26.4372 11.8525 24.8982 10.3135 22.9997 10.3135H22.375V8.43604C22.375 4.63909 19.297 1.56104 15.5 1.56104C11.7031 1.56104 8.625 4.63909 8.625 8.43604ZM21.75 19.3638C21.75 18.6734 21.1903 18.1138 20.5 18.1138C19.8096 18.1138 19.25 18.6734 19.25 19.3638V19.3763C19.25 20.0666 19.8096 20.6263 20.5 20.6263C21.1903 20.6263 21.75 20.0666 21.75 19.3763V19.3638ZM15.5 18.1138C16.1904 18.1138 16.75 18.6734 16.75 19.3638V19.3763C16.75 20.0666 16.1904 20.6263 15.5 20.6263C14.8096 20.6263 14.25 20.0666 14.25 19.3763V19.3638C14.25 18.6734 14.8096 18.1138 15.5 18.1138ZM11.75 19.3638C11.75 18.6734 11.1904 18.1138 10.5 18.1138C9.80965 18.1138 9.25 18.6734 9.25 19.3638V19.3763C9.25 20.0666 9.80965 20.6263 10.5 20.6263C11.1904 20.6263 11.75 20.0666 11.75 19.3763Z" fill="#D96163"/>
+                </svg>
+                <div class="row_required clmn">
+                    <span>Required level:</span>
+                    <span></span>
+                </div>`;
+            wrapper.appendChild(levelDiv);
+        }
+
+        // required_referals
+        if (!wrapper.querySelector('.required_referals')) {
+            const refDiv = document.createElement('div');
+            refDiv.className = 'required_referals jlcn clmn';
+            refDiv.style.display = 'none';
+            refDiv.innerHTML = `
+                <svg width="31" height="31" viewBox="0 0 31 31" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M5.48926 9.68734C5.48926 6.65552 7.94703 4.19775 10.9788 4.19775C14.0106 4.19775 16.4684 6.65552 16.4684 9.68734C16.4684 12.7192 14.0106 15.1769 10.9788 15.1769C7.94703 15.1769 5.48926 12.7192 5.48926 9.68734Z" fill="#D9B961"/>
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M1.29199 23.2498C1.29199 19.683 4.18349 16.7915 7.75033 16.7915H14.2087C15.3829 16.7915 16.4875 17.106 17.4387 17.6563C17.8379 17.8872 18.0837 18.3133 18.0837 18.7743V25.8332C18.0837 26.5466 17.5054 27.1248 16.792 27.1248H2.58366C1.8703 27.1248 1.29199 26.5466 1.29199 25.8332V23.2498Z" fill="#D9B961"/>
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M24.5417 16.7915C25.2551 16.7915 25.8333 17.3698 25.8333 18.0832V20.6665H28.4167C29.1301 20.6665 29.7083 21.2448 29.7083 21.9582C29.7083 22.6716 29.1301 23.2498 28.4167 23.2498H25.8333V25.8332C25.8333 26.5466 25.2551 27.1248 24.5417 27.1248C23.8283 27.1248 23.25 26.5466 23.25 25.8332V23.2498H20.6667C19.9533 23.2498 19.375 22.6716 19.375 21.9582C19.375 21.2448 19.9533 20.6665 20.6667 20.6665H23.25V18.0832C23.25 17.3698 23.8283 16.7915 24.5417 16.7915Z" fill="#D9B961"/>
+                </svg>
+                <div class="row_required clmn">
+                    <span>Required referals:</span>
+                    <span></span>
+                </div>`;
+            wrapper.appendChild(refDiv);
         }
     }
 
