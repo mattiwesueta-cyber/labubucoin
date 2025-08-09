@@ -19,6 +19,7 @@ class LabubuGame {
         this.accessories = {};
         this.selectedCard = null;
         this.selectedAccessory = null;
+        this.selectedCar = null;
         this.userId = null;
         this.isOnline = true; // флаг что игрок онлайн
         this.onlineIncomeInterval = null; // интервал для начисления онлайн дохода
@@ -838,6 +839,10 @@ class LabubuGame {
         // Обработка клика по карточкам апгрейда
         document.querySelectorAll('.box_lb').forEach(card => {
             card.addEventListener('click', (e) => {
+                // Игнорируем обработку здесь для машин, у них отдельная логика ниже
+                if (card.closest('.overflow_cars')) {
+                    return;
+                }
                 // Проверяем, находится ли карточка в .overflow_clothes (аксессуары)
                 if (card.closest('.overflow_clothes')) {
                     // Это аксессуар
@@ -886,6 +891,23 @@ class LabubuGame {
             });
         });
 
+        // Обработка клика по карточкам машин
+        document.querySelectorAll('.overflow_cars .box_lb').forEach(card => {
+            card.addEventListener('click', () => {
+                this.selectedCar = {
+                    id: card.dataset.id,
+                    price: parseInt(card.dataset.price, 10),
+                    stableIncome: parseInt(card.dataset.stableIncome, 10),
+                    image: card.dataset.costume ? ('assets/images/' + card.dataset.costume) : (card.querySelector('img')?.getAttribute('src') || '')
+                };
+                const popout = document.getElementById('popout_confirm_car');
+                if (popout) {
+                    popout.style.display = 'flex';
+                    this.updatePopoutConfirmCar();
+                }
+            });
+        });
+
         // Кнопка покупки
         const buyBtn = document.getElementById('buy_button');
         if (buyBtn) {
@@ -930,11 +952,40 @@ class LabubuGame {
                 }
             });
         }
+        // Кнопка покупки машины
+        const buyCarBtn = document.querySelector('#popout_confirm_car #buy_acces_button');
+        if (buyCarBtn) {
+            buyCarBtn.addEventListener('click', async () => {
+                await this.handleBuyCar();
+                const popout = document.getElementById('popout_confirm_car');
+                if (popout) {
+                    popout.classList.add('hidepopout');
+                    setTimeout(() => {
+                        popout.style.display = 'none';
+                        popout.classList.remove('hidepopout');
+                    }, 1000);
+                }
+            });
+        }
         // Кнопка закрытия попапа аксессуара
         const closeAccesBtn = document.querySelector('#popout_confirm_acces .svg_close');
         if (closeAccesBtn) {
             closeAccesBtn.addEventListener('click', () => {
                 const popout = document.getElementById('popout_confirm_acces');
+                if (popout) {
+                    popout.classList.add('hidepopout');
+                    setTimeout(() => {
+                        popout.style.display = 'none';
+                        popout.classList.remove('hidepopout');
+                    }, 1000);
+                }
+            });
+        }
+        // Кнопка закрытия попапа машины
+        const closeCarBtn = document.querySelector('#popout_confirm_car .svg_close');
+        if (closeCarBtn) {
+            closeCarBtn.addEventListener('click', () => {
+                const popout = document.getElementById('popout_confirm_car');
                 if (popout) {
                     popout.classList.add('hidepopout');
                     setTimeout(() => {
@@ -1211,6 +1262,91 @@ ${referralUrl}`;
             alert('Недостаточно монет для покупки!');
         }
     }
+
+    // Покупка машины (логика как у вещей)
+    async handleBuyCar() {
+        if (!this.selectedCar || !this.userId || !this.db) return;
+
+        // Загружаем актуальные данные игрока
+        const data = await this.db.loadPlayerData(this.userId);
+        if (!data) return;
+
+        if (data.balance >= this.selectedCar.price) {
+            // Списываем монеты
+            const newBalance = data.balance - this.selectedCar.price;
+            this.coins = newBalance;
+
+            // Увеличиваем стабильный доход от машины
+            this.stableIncome = (data.stable_income || 0) + (this.selectedCar.stableIncome || 0);
+
+            // Сохраняем «машину» как текущий costume (или отдельным полем, если добавим в БД)
+            // Здесь используем costume: путь к изображению авто
+            if (this.selectedCar.image) {
+                this.costume = this.selectedCar.image.replace('assets/images/', '');
+                const carImg = document.getElementById('car');
+                if (carImg) {
+                    carImg.src = this.selectedCar.image;
+                    carImg.style.display = 'block';
+                }
+            }
+
+            // Сохраняем изменения в БД
+            await this.db.updateBalance(this.userId, this.coins);
+            await this.db.updateAccessoriesAndIncome(this.userId, undefined, this.stableIncome);
+            await this.db.updateCostume(this.userId, this.costume);
+
+            // Обновляем UI и перезапускаем онлайн доход
+            this.updateUI();
+            this.restartOnlineIncome();
+
+            // Сбрасываем выбор и закрываем попап
+            this.selectedCar = null;
+            const popout = document.getElementById('popout_confirm_car');
+            if (popout) popout.style.display = 'none';
+        } else {
+            alert('Недостаточно монет для покупки машины!');
+        }
+    }
+
+    // Обновление попапа подтверждения покупки машины
+    updatePopoutConfirmCar() {
+        const popout = document.getElementById('popout_confirm_car');
+        if (!popout || !this.selectedCar) return;
+
+        // Название — берём текст из выбранной карточки
+        const nameSpans = popout.querySelectorAll('.box_lb .row_lb span');
+        const selectedCardElemCar = document.querySelector(`.overflow_cars .box_lb[data-id='${this.selectedCar.id}']`);
+        if (nameSpans.length >= 2 && selectedCardElemCar) {
+            const cardNameSpans = selectedCardElemCar.querySelectorAll('.row_lb span');
+            if (cardNameSpans.length >= 2) {
+                nameSpans[0].textContent = cardNameSpans[0].textContent;
+                nameSpans[1].textContent = cardNameSpans[1].textContent;
+            }
+        }
+
+        // Превью изображения: обычный img + absolute
+        const imgBase = popout.querySelector('.box_lb > img:not(.absolute)');
+        if (imgBase && this.selectedCar.image) {
+            imgBase.src = this.selectedCar.image;
+        }
+        const imgAbs = popout.querySelector('.box_lb img.absolute');
+        if (imgAbs && this.selectedCar.image) {
+            imgAbs.src = this.selectedCar.image;
+            imgAbs.style.display = '';
+        }
+
+        // Stable income
+        const stableIncomeSpan = popout.querySelector('.box_lb .row_profit_lb .flex_i span');
+        if (stableIncomeSpan) {
+            stableIncomeSpan.textContent = '+' + this.formatNumber(this.selectedCar.stableIncome || 0);
+        }
+
+        // Цена
+        const priceSpan = popout.querySelector('.price_pannel .pr_wrapper span');
+        if (priceSpan) {
+            priceSpan.textContent = this.formatNumber(this.selectedCar.price || 0);
+        }
+    }
     
     // Новая функция для отображения аксессуара
     displayAccessory(category, imagePath) {
@@ -1281,15 +1417,15 @@ ${referralUrl}`;
 
     formatNumber(num) {
         if (num < 1000) {
-            return num.toString();
+            return Math.floor(num).toString();
         } else if (num < 1000000) {
-            return (num / 1000).toFixed(2).replace('.', ',') + 'К';
+            return Math.floor(num / 1000) + 'К';
         } else if (num < 1000000000) {
-            return (num / 1000000).toFixed(2).replace('.', ',') + 'М';
+            return Math.floor(num / 1000000) + 'М';
         } else if (num < 1000000000000) {
-            return (num / 1000000000).toFixed(2).replace('.', ',') + 'B';
+            return Math.floor(num / 1000000000) + 'B';
         } else {
-            return (num / 1000000000000).toFixed(2).replace('.', ',') + 'T';
+            return Math.floor(num / 1000000000000) + 'T';
         }
     }
 
@@ -1610,9 +1746,16 @@ ${referralUrl}`;
         if (img && this.selectedCard.costume) {
             img.src = 'assets/images/' + this.selectedCard.costume;
         }
-        // Название
+        // Название — копируем из выбранной карточки
         const nameSpans = popout.querySelectorAll('.box_lb .row_lb span');
-        if (nameSpans.length >= 2) {
+        const selectedCardElemName = document.querySelector(`.box_lb[data-id='${this.selectedCard.id}']`);
+        if (nameSpans.length >= 2 && selectedCardElemName) {
+            const cardNameSpans = selectedCardElemName.querySelectorAll('.row_lb span');
+            if (cardNameSpans.length >= 2) {
+                nameSpans[0].textContent = cardNameSpans[0].textContent;
+                nameSpans[1].textContent = cardNameSpans[1].textContent;
+            }
+        } else if (nameSpans.length >= 2) {
             const parts = this.selectedCard.id.split('_');
             nameSpans[0].textContent = parts[0] ? this.capitalize(parts[0]) : '';
             nameSpans[1].textContent = parts[1] ? this.capitalize(parts[1]) : '';

@@ -376,7 +376,7 @@ span, div:not(.form), img, svg, path, input {
 	opacity: 0.05;
 	left: -30vw;
 }
-.overflow_u, .overflow_clothes {
+.overflow_u, .overflow_clothes, .overflow_cars {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
@@ -982,7 +982,7 @@ span, div:not(.form), img, svg, path, input {
 	display: flex !important;
 }
 .popout_confirm .wrapper_lb {
-	pointer-events: none;
+	pointer-events: none !important;
 }
 
 
