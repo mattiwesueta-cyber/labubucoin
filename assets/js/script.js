@@ -1581,10 +1581,11 @@ ${referralUrl}`;
 
     // Функция форматирования больших чисел
     formatNumberCoins(num) {
-        if (num < 1000) {
-            return num.toString();
+        const intNum = Math.floor(num);
+        if (intNum < 1000) {
+            return intNum.toString();
         } else {
-            return num.toLocaleString('ru-RU');
+            return intNum.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
         }
     }
 
