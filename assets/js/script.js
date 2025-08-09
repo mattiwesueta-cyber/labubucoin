@@ -663,7 +663,10 @@ class LabubuGame {
             this.accessories = data.accessories || {};
             this.ensureAccessoriesStructure();
             this.currentLevel = data.player_level || 1; // Загружаем уровень игрока
-            this.currentEnergy = data.current_energy !== undefined ? data.current_energy : 100; // Загружаем текущую энергию
+            // Если current_energy отсутствует в БД (null/undefined), НЕ заполняем бесплатно — ставим 0
+            this.currentEnergy = (data.current_energy === null || data.current_energy === undefined)
+                ? 0
+                : data.current_energy; // Загружаем текущую энергию
             this.maxEnergy = data.max_energy !== undefined ? data.max_energy : 100; // Загружаем максимальную энергию
 
             console.log('💾 Energy loaded from DB:', this.currentEnergy + '/' + this.maxEnergy);
