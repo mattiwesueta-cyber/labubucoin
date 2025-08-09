@@ -627,6 +627,7 @@ class LabubuGame {
                 const hatImg = document.getElementById('hat');
                 const shoesImg = document.getElementById('shoes');
                 const bagImg = document.getElementById('bag');
+                const carImg = document.getElementById('car');
                 
                 console.log('Accessory elements found:', {
                     hat: !!hatImg,
@@ -672,15 +673,30 @@ class LabubuGame {
                         bagImg.style.display = 'none';
                     }
                 }
+
+                if (carImg) {
+                    if (data.accessories.car) {
+                        console.log('Setting car:', data.accessories.car);
+                        carImg.src = data.accessories.car;
+                        carImg.style.display = 'block';
+                        carImg.onerror = () => console.error('Failed to load car image:', data.accessories.car);
+                        carImg.onload = () => console.log('Car image loaded successfully');
+                    } else {
+                        console.log('No car accessory found');
+                        carImg.style.display = 'none';
+                    }
+                }
             } else {
                 console.log('No accessories data found');
                 // Скрываем все аксессуары если данных нет
                 const hatImg = document.getElementById('hat');
                 const shoesImg = document.getElementById('shoes');
                 const bagImg = document.getElementById('bag');
+                const carImg2 = document.getElementById('car');
                 if (hatImg) hatImg.style.display = 'none';
                 if (shoesImg) shoesImg.style.display = 'none';
                 if (bagImg) bagImg.style.display = 'none';
+                if (carImg2) carImg2.style.display = 'none';
             }
             // Проверяем, не истек ли буст
             if (this.isBoostActive && this.boostTimeLeft <= 0) {
@@ -1279,10 +1295,12 @@ ${referralUrl}`;
             // Увеличиваем стабильный доход от машины
             this.stableIncome = (data.stable_income || 0) + (this.selectedCar.stableIncome || 0);
 
-            // Сохраняем «машину» как текущий costume (или отдельным полем, если добавим в БД)
-            // Здесь используем costume: путь к изображению авто
+            // Сохраняем путь к машине в accessories.car, без использования costume
+            if (!this.accessories || typeof this.accessories !== 'object') {
+                this.accessories = {};
+            }
             if (this.selectedCar.image) {
-                this.costume = this.selectedCar.image.replace('assets/images/', '');
+                this.accessories.car = this.selectedCar.image;
                 const carImg = document.getElementById('car');
                 if (carImg) {
                     carImg.src = this.selectedCar.image;
@@ -1290,10 +1308,9 @@ ${referralUrl}`;
                 }
             }
 
-            // Сохраняем изменения в БД
+            // Сохраняем изменения в БД: баланс, аксессуары (включая car), стабильный доход
             await this.db.updateBalance(this.userId, this.coins);
-            await this.db.updateAccessoriesAndIncome(this.userId, undefined, this.stableIncome);
-            await this.db.updateCostume(this.userId, this.costume);
+            await this.db.updateAccessoriesAndIncome(this.userId, this.accessories, this.stableIncome);
 
             // Обновляем UI и перезапускаем онлайн доход
             this.updateUI();
