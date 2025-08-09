@@ -17,6 +17,8 @@ class LabubuGame {
         this.isBoostActive = false;
         this.costume = 'labubu.png';
         this.accessories = {};
+        // Структура владения предметами (инвентарь)
+        this.purchaseHistory = [];
         this.selectedCard = null;
         this.selectedAccessory = null;
         this.selectedCar = null;
@@ -274,6 +276,59 @@ class LabubuGame {
         if (referralsBlock) {
             referralsBlock.style.display = requirements.hasReferrals ? 'none' : '';
         }
+    }
+
+    // Проверяет, куплен ли предмет по элементу карточки
+    isItemAlreadyOwned(cardElement) {
+        const itemId = cardElement?.dataset?.id;
+        if (!itemId) return false;
+        return this.isItemOwnedById(itemId);
+    }
+
+    // Проверяет владение по id
+    isItemOwnedById(itemId) {
+        if (!this.accessories) return false;
+        // inventory как список всех покупок
+        if (Array.isArray(this.accessories.inventory) && this.accessories.inventory.includes(itemId)) {
+            return true;
+        }
+        // Также допускаем, что некоторые категории хранятся по ключам (hat/shoes/bag/car)
+        const possible = ['hat','shoes','bag','car'];
+        for (const key of possible) {
+            const value = this.accessories[key];
+            if (typeof value === 'string' && itemId.includes(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Проверка по данным, считанным из БД
+    isItemAlreadyOwnedByData(itemId, data) {
+        try {
+            let accessories = data.accessories;
+            if (accessories && typeof accessories === 'string') {
+                accessories = JSON.parse(accessories);
+            }
+            if (!accessories) return false;
+            if (Array.isArray(accessories.inventory) && accessories.inventory.includes(itemId)) return true;
+            return false;
+        } catch {
+            return false;
+        }
+    }
+
+    // Добавить запись о покупке в локальный журнал
+    addPurchaseRecord(entry) {
+        try {
+            this.purchaseHistory.push(entry);
+        } catch {}
+    }
+
+    // Гарантировать структуру accessories
+    ensureAccessoriesStructure() {
+        if (!this.accessories || typeof this.accessories !== 'object') this.accessories = {};
+        if (!Array.isArray(this.accessories.inventory)) this.accessories.inventory = [];
     }
 
     // Гарантируем наличие блоков required_level и required_referals в карточке
@@ -606,6 +661,7 @@ class LabubuGame {
             this.isBoostActive = data.is_boost_active || false;
             this.costume = data.costume || 'labubu.png';
             this.accessories = data.accessories || {};
+            this.ensureAccessoriesStructure();
             this.currentLevel = data.player_level || 1; // Загружаем уровень игрока
             this.currentEnergy = data.current_energy !== undefined ? data.current_energy : 100; // Загружаем текущую энергию
             this.maxEnergy = data.max_energy !== undefined ? data.max_energy : 100; // Загружаем максимальную энергию
@@ -906,6 +962,11 @@ class LabubuGame {
                 }
                 // Проверяем, находится ли карточка в .overflow_clothes (аксессуары)
                 if (card.closest('.overflow_clothes')) {
+                    // Проверка: уже куплен?
+                    if (this.isItemAlreadyOwned(card)) {
+                        alert('У тебя уже есть этот предмет');
+                        return;
+                    }
                     // Это аксессуар
                     this.selectedAccessory = {
                         id: card.dataset.id,
@@ -923,6 +984,10 @@ class LabubuGame {
                     }
                 } else {
                     // Это обычный suit - проверяем требования
+                    if (this.isItemAlreadyOwned(card)) {
+                        alert('У тебя уже есть этот предмет');
+                        return;
+                    }
                     const requirements = this.checkItemRequirements(card);
                     
                     if (!requirements.canBuy) {
@@ -955,6 +1020,10 @@ class LabubuGame {
         // Обработка клика по карточкам машин
         document.querySelectorAll('.overflow_cars .box_lb').forEach(card => {
             card.addEventListener('click', () => {
+                if (this.isItemAlreadyOwned(card)) {
+                    alert('У тебя уже есть этот автомобиль');
+                    return;
+                }
                 this.selectedCar = {
                     id: card.dataset.id,
                     price: parseInt(card.dataset.price, 10),
@@ -1203,6 +1272,13 @@ ${referralUrl}`;
         // Получаем данные пользователя
         const data = await this.db.loadPlayerData(this.userId);
         if (!data) return;
+        this.ensureAccessoriesStructure();
+
+        // Предотвращаем повторную покупку одного и того же предмета
+        if (this.isItemAlreadyOwnedByData(this.selectedCard.id, data)) {
+            alert('Этот предмет уже куплен.');
+            return;
+        }
         if (data.balance >= this.selectedCard.price) {
             // Списываем монеты и увеличиваем stable income
             this.coins = data.balance - this.selectedCard.price;
@@ -1217,14 +1293,17 @@ ${referralUrl}`;
                 }
             }
             
+            // Добавляем покупку в историю и аксессуары
+            this.addPurchaseRecord({ id: this.selectedCard.id, type: 'suit', price: this.selectedCard.price, ts: Date.now() });
+            // Сохраняем инвентарь в accessories.inventory
+            this.accessories.inventory = this.accessories.inventory || [];
+            if (!this.accessories.inventory.includes(this.selectedCard.id)) {
+                this.accessories.inventory.push(this.selectedCard.id);
+            }
+
             // Безопасно сохраняем в БД - отдельно каждое поле
             await this.db.updateBalance(this.userId, this.coins);
-            await this.db.updateAccessoriesAndIncome(this.userId, undefined, this.stableIncome);
-            
-            // Если изменился костюм, обновляем его отдельно
-            if (this.selectedCard.costume) {
-                await this.db.updateCostume(this.userId, this.costume);
-            }
+            await this.db.updateAccessoriesAndIncome(this.userId, this.accessories, this.stableIncome);
             
             this.updateUI();
             
@@ -1251,6 +1330,12 @@ ${referralUrl}`;
         // Получаем данные пользователя
         const data = await this.db.loadPlayerData(this.userId);
         if (!data) return;
+        this.ensureAccessoriesStructure();
+        // Предотвращаем повторную покупку того же аксессуара
+        if (this.isItemAlreadyOwnedByData(this.selectedAccessory.id, data)) {
+            alert('Этот аксессуар уже куплен.');
+            return;
+        }
         
         if (data.balance >= this.selectedAccessory.price) {
             // Списываем монеты
@@ -1306,6 +1391,11 @@ ${referralUrl}`;
             // Сохраняем аксессуар
             accessories[category] = this.selectedAccessory.image;
             this.accessories = accessories; // обязательно обновляем актуальные аксессуары
+            // Инвентарь: логируем id покупки
+            this.accessories.inventory = this.accessories.inventory || [];
+            if (!this.accessories.inventory.includes(this.selectedAccessory.id)) {
+                this.accessories.inventory.push(this.selectedAccessory.id);
+            }
             
             // Увеличиваем стабильный доход при покупке аксессуара
             this.stableIncome += this.selectedAccessory.stableIncome;
@@ -1315,7 +1405,7 @@ ${referralUrl}`;
             console.log('New stable income:', this.stableIncome);
             
             // Безопасно сохраняем аксессуары и стабильный доход в БД
-            await this.db.updateAccessoriesAndIncome(this.userId, accessories, this.stableIncome);
+            await this.db.updateAccessoriesAndIncome(this.userId, this.accessories, this.stableIncome);
             
             // Обновляем баланс в БД
             await this.db.updateBalance(this.userId, this.coins);
@@ -1341,6 +1431,12 @@ ${referralUrl}`;
         // Загружаем актуальные данные игрока
         const data = await this.db.loadPlayerData(this.userId);
         if (!data) return;
+        this.ensureAccessoriesStructure();
+        // Предотвращаем повторную покупку той же машины
+        if (this.isItemAlreadyOwnedByData(this.selectedCar.id, data)) {
+            alert('Этот автомобиль уже куплен.');
+            return;
+        }
 
         if (data.balance >= this.selectedCar.price) {
             // Списываем монеты
@@ -1361,6 +1457,11 @@ ${referralUrl}`;
                     carImg.src = this.selectedCar.image;
                     carImg.style.display = 'block';
                 }
+            }
+            // Инвентарь: добавляем ID машины
+            this.accessories.inventory = this.accessories.inventory || [];
+            if (!this.accessories.inventory.includes(this.selectedCar.id)) {
+                this.accessories.inventory.push(this.selectedCar.id);
             }
 
             // Сохраняем изменения в БД: баланс, аксессуары (включая car), стабильный доход
