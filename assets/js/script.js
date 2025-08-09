@@ -1020,13 +1020,23 @@ class LabubuGame {
                 this.classList.add('selected_cloth_ctg');
 
                 const category = this.querySelector('span').textContent.trim().toLowerCase();
+                const overflowU = document.querySelector('.overflow_u');
+                const overflowClothes = document.querySelector('.overflow_clothes');
+                const overflowCars = document.querySelector('.overflow_cars');
 
                 if (category === 'suit') {
-                    document.querySelector('.overflow_u').style.display = '';
-                    document.querySelector('.overflow_clothes').style.display = 'none';
+                    if (overflowU) overflowU.style.display = '';
+                    if (overflowClothes) overflowClothes.style.display = 'none';
+                    if (overflowCars) overflowCars.style.display = 'none';
+                } else if (category === 'car' || category === 'cars' || category === 'auto') {
+                    // Показать список машин
+                    if (overflowU) overflowU.style.display = 'none';
+                    if (overflowClothes) overflowClothes.style.display = 'none';
+                    if (overflowCars) overflowCars.style.display = '';
                 } else {
-                    document.querySelector('.overflow_u').style.display = 'none';
-                    document.querySelector('.overflow_clothes').style.display = '';
+                    if (overflowU) overflowU.style.display = 'none';
+                    if (overflowClothes) overflowClothes.style.display = '';
+                    if (overflowCars) overflowCars.style.display = 'none';
                     // Фильтруем карточки внутри overflow_clothes
                     document.querySelectorAll('.overflow_clothes .box_lb').forEach(card => {
                         const id = card.dataset.id ? card.dataset.id.toLowerCase() : '';
