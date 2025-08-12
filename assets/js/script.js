@@ -32,6 +32,9 @@ class LabubuGame {
         this.maxEnergy = 100; // максимальная энергия
         this.lastEnergyUpdate = Date.now(); // время последнего обновления энергии
 
+        // Анимации UI
+        this.circleBgAnim = null; // текущая анимация пульса фона
+
         // Система уровней
         this.currentLevel = 1;
         this.currentXp = 0;
@@ -1882,12 +1885,35 @@ ${referralUrl}`;
 
     animateCircleBg() {
         const circleBg = document.querySelector('.circle_bg');
-        if (circleBg) {
-            circleBg.style.transform = 'scale(0.9) translateZ(0)';
-            setTimeout(() => {
-                circleBg.style.transform = 'scale(1) translateZ(0)';
-            }, 50);
+        if (!circleBg) return;
+
+        // Готовим элемент к анимации
+        try { circleBg.style.willChange = 'transform, filter'; } catch (_) {}
+
+        // Если предыдущая анимация ещё идёт — перезапускаем
+        if (this.circleBgAnim && typeof this.circleBgAnim.cancel === 'function') {
+            this.circleBgAnim.cancel();
         }
+
+        // Плавный пульс: лёгкое уменьшение и возврат + чуть ярче
+        const keyframes = [
+            { transform: 'scale(1)', filter: 'brightness(1)' },
+            { transform: 'scale(0.94)', filter: 'brightness(1.7)' },
+            { transform: 'scale(1)', filter: 'brightness(1)' }
+        ];
+        const options = { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'none' };
+        const anim = circleBg.animate(keyframes, options);
+        this.circleBgAnim = anim;
+
+        anim.onfinish = () => {
+            // Сбрасываем will-change после завершения, чтобы не держать слой вечно
+            try { circleBg.style.willChange = 'auto'; } catch (_) {}
+            this.circleBgAnim = null;
+        };
+        anim.oncancel = () => {
+            try { circleBg.style.willChange = 'auto'; } catch (_) {}
+            this.circleBgAnim = null;
+        };
     }
 
     async renderTopPlayers() {
