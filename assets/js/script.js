@@ -550,9 +550,9 @@ class LabubuGame {
         try {
             // UMD-глобаль библиотеки: TON_CONNECT_UI
             if (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI) {
-                this.tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
-                    manifestUrl: location.origin + '/tonconnect-manifest.json'
-                });
+                const underLabubu = window.location.pathname.includes('/labubu_game/');
+                const manifestUrl = location.origin + (underLabubu ? '/labubu_game/tonconnect-manifest.json' : '/tonconnect-manifest.json');
+                this.tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({ manifestUrl });
 
                 // Обновляем UI при изменении статуса кошелька
                 if (typeof this.tonConnectUI.onStatusChange === 'function') {
@@ -586,7 +586,7 @@ class LabubuGame {
         try {
             if (!this.tonConnectUI) return;
             // Если уже подключен — отключим и откроем модал заново (переподключение)
-            if (this.tonConnectUI.wallet || this.walletAddress) {
+            if ((this.tonConnectUI.wallet && this.tonConnectUI.wallet.account) || this.walletAddress) {
                 if (typeof this.tonConnectUI.disconnect === 'function') {
                     await this.tonConnectUI.disconnect();
                 }
