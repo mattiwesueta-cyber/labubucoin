@@ -31,6 +31,9 @@ class LabubuGame {
         this.currentEnergy = 100; // текущая энергия
         this.maxEnergy = 100; // максимальная энергия
         this.lastEnergyUpdate = Date.now(); // время последнего обновления энергии
+        // Скорость восстановления энергии онлайн (ед/сек). Оффлайн восстановление отключено.
+        this.energyRegenPerSecond = 1;
+        this.lastHiddenAt = null; // метка времени ухода в фон
 
         // Анимации UI
         this.circleBgAnim = null; // текущая анимация пульса фона
@@ -316,7 +319,7 @@ class LabubuGame {
         if (levelBlock) {
             levelBlock.style.display = requirements.hasLevel ? 'none' : '';
         }
-
+        
         // Обновляем required referrals
         const referralsBlock = wrapper.querySelector('.required_referals');
         const referralsRequirementValue = wrapper.querySelector('.required_referals .row_required span:last-child');
@@ -822,42 +825,8 @@ class LabubuGame {
                 this.updateWalletUI();
             }
 
-            // Восстанавливаем энергию за время отсутствия
-            if (data.last_active) {
-                const lastActiveTime = new Date(data.last_active).getTime();
-                const currentTime = now;
-                const secondsOffline = Math.floor((currentTime - lastActiveTime) / 1000);
-                
-                console.log('⏰ Offline time calculation:', {
-                    lastActiveTime: data.last_active,
-                    currentTime: new Date(now).toISOString(),
-                    secondsOffline: secondsOffline,
-                    currentEnergy: this.currentEnergy,
-                    maxEnergy: this.maxEnergy,
-                    profitPerClick: this.profitPerClick
-                });
-                
-                if (secondsOffline > 0 && this.currentEnergy < this.maxEnergy) {
-                    const energyToRestore = secondsOffline * this.profitPerClick;
-                    const oldEnergy = this.currentEnergy;
-                    this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + energyToRestore);
-                    
-                    console.log('⚡ Energy restored for offline time:', {
-                        secondsOffline: secondsOffline,
-                        energyRestored: this.currentEnergy - oldEnergy,
-                        oldEnergy: oldEnergy,
-                        newEnergy: this.currentEnergy,
-                        maxEnergy: this.maxEnergy
-                    });
-                    
-                    // Сохраняем восстановленную энергию в БД
-                    if (this.userId && this.db) {
-                        await this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
-                    }
-                } else {
-                    console.log('⚡ No energy restoration needed');
-                }
-            }
+            // Отключаем оффлайн-восстановление энергии (фикс
+            // проблемы моментального фулла при быстром перезаходе)
 
             // НЕ обновляем last_active сразу при входе - только при активных действиях
 
@@ -1413,7 +1382,7 @@ ${referralUrl}`;
             // Фолбэк для Telegram WebApp на iOS/устройствах без navigator.vibrate
             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
-
+        
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
         this.updateUI(); // updateUI() уже включает updateLevelProgressBar()
@@ -1476,7 +1445,7 @@ ${referralUrl}`;
             if (!this.accessories.inventory.includes(this.selectedCard.id)) {
                 this.accessories.inventory.push(this.selectedCard.id);
             }
-
+            
             // Безопасно сохраняем в БД - отдельно каждое поле
             await this.db.updateBalance(this.userId, this.coins);
             await this.db.updateAccessoriesAndIncome(this.userId, this.accessories, this.stableIncome);
@@ -1737,9 +1706,9 @@ ${referralUrl}`;
                 span.style.top = `${Math.max(0, Math.min(contRect.height, cy + (Math.random()*jitter*2 - jitter)))}px`;
                 span.style.transform = 'translate(-50%, -50%)';
             } else {
-                // Рандомная позиция внутри контейнера (от 10% до 90%)
-                span.style.left = `${10 + Math.random() * 80}%`;
-                span.style.top = `${10 + Math.random() * 80}%`;
+            // Рандомная позиция внутри контейнера (от 10% до 90%)
+            span.style.left = `${10 + Math.random() * 80}%`;
+            span.style.top = `${10 + Math.random() * 80}%`;
             }
             // Рандомный размер шрифта от 5vw до 10.3565vw
             const minFontSize = 8; // vw
@@ -2415,12 +2384,12 @@ ${referralUrl}`;
                 const incomePerSecond = this.stableIncome / 60;
                 if (this.stableIncome > 0) {
                     // Добавляем доход за секунду только если доход положительный
-                    this.coins += incomePerSecond;
+                this.coins += incomePerSecond;
                 }
                 
-                // Восстанавливаем энергию (profitPerClick единиц в секунду)
+                // Онлайн восстановление энергии фиксированной скоростью
                 if (this.currentEnergy < this.maxEnergy) {
-                    this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + this.profitPerClick);
+                    this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + this.energyRegenPerSecond);
                 }
                 
                 // Логируем каждые 10 секунд для не засорения консоли
@@ -2515,13 +2484,19 @@ ${referralUrl}`;
     // Установка статуса онлайн/оффлайн
     setOnlineStatus(isOnline) {
         console.log('Setting online status:', isOnline);
-        this.isOnline = isOnline;
-        
-        if (isOnline) {
-            this.startOnlineIncome();
-        } else {
+        if (!isOnline) {
+            // уходим в фон — запомним время и остановим таймеры
+            if (this.isOnline) this.lastHiddenAt = Date.now();
+            this.isOnline = false;
             this.stopOnlineIncome();
+            return;
         }
+
+        // возвращаемся из фона
+        this.isOnline = true;
+        // Не восстанавливаем энергию по времени в фоне
+        this.lastHiddenAt = null;
+        this.startOnlineIncome();
     }
     
     // Функция для принудительного сохранения баланса в БД
