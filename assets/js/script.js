@@ -559,6 +559,8 @@ class LabubuGame {
                 btn.addEventListener('click', async () => {
                     await this.handleConnectWallet();
                 });
+                // При старте обновим подпись, если адрес уже есть в памяти (после загрузки БД)
+                this.updateWalletUI();
             }
         } catch (_) {}
     }
@@ -579,13 +581,32 @@ class LabubuGame {
             if (this.userId && this.db) {
                 await this.db.updateWalletAddress(this.userId, address);
             }
-            // Обновим кнопку
-            const btn = document.getElementById('connect_wallet_btn');
-            if (btn) {
-                const span = btn.querySelector('span');
-                if (span) span.textContent = 'Wallet connected';
-            }
+            // Обновим кнопку адресом
+            this.updateWalletUI();
         } catch (_) {}
+    }
+
+    // Короткий вывод адреса и подпись кнопки
+    updateWalletUI() {
+        const btn = document.getElementById('connect_wallet_btn');
+        if (!btn) return;
+        const span = btn.querySelector('span');
+        if (!span) return;
+        if (this.walletAddress && typeof this.walletAddress === 'string' && this.walletAddress.length > 10) {
+            span.textContent = this.formatTonAddress(this.walletAddress);
+        } else {
+            span.textContent = 'Connect wallet';
+        }
+    }
+
+    formatTonAddress(address) {
+        try {
+            const clean = String(address).trim();
+            if (clean.length <= 10) return clean;
+            return `${clean.slice(0, 4)}…${clean.slice(-4)}`;
+        } catch (_) {
+            return 'Wallet';
+        }
     }
 
     async loadTelegramUser(retry = 0) {
@@ -720,6 +741,12 @@ class LabubuGame {
 
             // Сразу обновляем UI после загрузки ключевых полей, чтобы прогресс-бар и ранги не ждали последующих шагов
             this.updateUI();
+
+            // Если у игрока уже сохранен адрес кошелька — отобразим его сразу на кнопке
+            if (data.wallet_address) {
+                this.walletAddress = data.wallet_address;
+                this.updateWalletUI();
+            }
 
             // Восстанавливаем энергию за время отсутствия
             if (data.last_active) {
