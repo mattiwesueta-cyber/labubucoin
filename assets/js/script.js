@@ -51,6 +51,50 @@ class LabubuGame {
         this.init();
     }
 
+    // Реферальные награды: если у меня есть пригласивший, и я (реферал) достиг нового реферального ранга,
+    // то пригласившему начисляется базовая награда ранга * 2
+    async checkAndAwardReferralRanks() {
+        try {
+            if (!this.levelsConfig || !this.levelsConfig.ranks || !this.userId || !this.db) return;
+
+            // Загружаем мои текущие данные (нужен invited_by и текущий баланс/ранг)
+            const me = await this.db.loadPlayerData(this.userId);
+            if (!me || !me.invited_by) return; // нет пригласившего
+
+            // Определяем мой текущий ранг по монетам
+            const myCoins = this.coins;
+            const currentRank = this.levelsConfig.getRankByCoins(myCoins);
+            if (!currentRank) return;
+
+            // Храним локально, какой максимальный реферальный ранги я уже засчитывал для наград, чтобы не дублировать выплаты
+            if (!this.accessories) this.accessories = {};
+            if (!this.accessories._awardedReferralRank) this.accessories._awardedReferralRank = 0;
+
+            const currentRankIndex = this.levelsConfig.ranks.findIndex(r => r.name === currentRank.name);
+            if (currentRankIndex === -1) return;
+
+            if (currentRankIndex > this.accessories._awardedReferralRank) {
+                // Новый достигнутый ранг — начисляем пригласившему
+                const inviterId = me.invited_by;
+                const baseReward = currentRank.reward || 0;
+                const rewardForInviter = baseReward * 2;
+
+                if (rewardForInviter > 0) {
+                    // Загружаем пригласившего, прибавляем монеты, сохраняем
+                    const inviter = await this.db.loadPlayerData(inviterId);
+                    if (inviter) {
+                        const newBalance = (inviter.balance || 0) + rewardForInviter;
+                        await this.db.updateBalance(inviterId, newBalance);
+                    }
+                }
+
+                // Обновляем локально и в БД отметку, что этот ранг уже учтён
+                this.accessories._awardedReferralRank = currentRankIndex;
+                await this.db.updateAccessoriesAndIncome(this.userId, this.accessories, undefined);
+            }
+        } catch (_) {}
+    }
+
     // Инициализация системы уровней
     async initLevelsSystem() {
         console.log('🔄 Starting levels system initialization...');
@@ -1368,6 +1412,8 @@ ${referralUrl}`;
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
         this.updateUI(); // updateUI() уже включает updateLevelProgressBar()
+        // Проверка и выдача реферальных наград пригласившему (если есть)
+        this.checkAndAwardReferralRanks().catch(() => {});
         this.saveGameData();
         
         // Обновляем время последней активности при клике
