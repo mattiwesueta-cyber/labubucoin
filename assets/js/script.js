@@ -35,6 +35,11 @@ class LabubuGame {
         this.energyRegenPerSecond = 1;
         this.lastHiddenAt = null; // метка времени ухода в фон
 
+        // Дросселирование сохранений баланса
+        this.saveThrottleMs = 2000; // минимум 2 секунды между сохранениями
+        this.saveTimer = null;
+        this.saveDirty = false;
+
         // Анимации UI
         this.circleBgAnim = null; // текущая анимация пульса фона
 
@@ -1396,7 +1401,7 @@ ${referralUrl}`;
         }
         
         console.log('handleClick: userId =', this.userId, 'coins =', this.coins, 'energy =', this.currentEnergy, 'spent =', energyCost);
-        this.updateBalanceInDB();
+        this.enqueueSaveBalance();
         // Визуальный эффект только один: рандомный около точки клика
         this.spawnRandomProfitSpan(profit, evt);
         this.animateCircleBg();
@@ -1817,7 +1822,7 @@ ${referralUrl}`;
         
         // Используем безопасные функции вместо полной перезаписи
         // Обновляем баланс и энергию
-        this.db.updateBalance(this.userId, this.coins);
+        this.enqueueSaveBalance();
         this.db.updateEnergy(this.userId, this.currentEnergy, this.maxEnergy);
         
         // Если активен буст, можно добавить отдельную функцию для его обновления
@@ -1828,18 +1833,27 @@ ${referralUrl}`;
         // Удаляем работу с localStorage, теперь все из БД
     }
 
-    async updateBalanceInDB() {
-        if (!this.userId) {
-            console.warn('updateBalanceInDB: userId is null!');
-            return;
-        }
-        try {
-            // Используем новую безопасную функцию обновления баланса
-            const result = await this.db.updateBalance(this.userId, this.coins);
-            console.log('updateBalanceInDB: success =', result);
-        } catch (e) {
-            console.error('Ошибка обновления баланса в БД:', e);
-        }
+    async updateBalanceInDB() { this.enqueueSaveBalance(); }
+
+    // Очередь/дросселирование сохранения баланса при частых кликах
+    enqueueSaveBalance() {
+        if (!this.userId || !this.db) return;
+        this.saveDirty = true;
+        const now = Date.now();
+        const elapsed = now - this.lastOnlineIncomeSave;
+        if (this.saveTimer) return; // уже запланировано
+        const wait = Math.max(0, this.saveThrottleMs - elapsed);
+        this.saveTimer = setTimeout(async () => {
+            this.saveTimer = null;
+            if (!this.saveDirty) return;
+            this.saveDirty = false;
+            try {
+                await this.db.updateBalance(this.userId, this.coins);
+                this.lastOnlineIncomeSave = Date.now();
+            } catch (e) {
+                // не падаем, повторится при следующем вызове
+            }
+        }, wait);
     }
 
     randomizeLabubuPosition() {
