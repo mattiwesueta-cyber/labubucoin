@@ -571,6 +571,7 @@ span, div:not(.form), img, svg, path, input {
 }
 .header {
 	position: relative;
+	z-index: 999999;
 }
 
 @keyframes fadeInUp {
@@ -986,6 +987,7 @@ span, div:not(.form), img, svg, path, input {
 }
 
 .button_connect {
+	cursor: pointer;
 	height: 8.1494vw;
 	padding: 0vw 3.565vw;
 	border-radius: 56.5365vw;
