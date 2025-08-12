@@ -36,7 +36,7 @@ class LabubuGame {
         this.lastHiddenAt = null; // метка времени ухода в фон
 
         // Дросселирование сохранений баланса
-        this.saveThrottleMs = 2000; // минимум 2 секунды между сохранениями
+        this.saveThrottleMs = 1000; // минимум 1 секунда между сохранениями
         this.saveTimer = null;
         this.saveDirty = false;
 
