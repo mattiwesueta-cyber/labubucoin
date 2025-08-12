@@ -551,7 +551,7 @@ class LabubuGame {
             // UMD-глобаль библиотеки: TON_CONNECT_UI
             if (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI) {
                 this.tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
-                    manifestUrl: location.origin + '/labubu_game/tonconnect-manifest.json'
+                    manifestUrl: location.origin + '/tonconnect-manifest.json'
                 });
             }
             const btn = document.getElementById('connect_wallet_btn');
