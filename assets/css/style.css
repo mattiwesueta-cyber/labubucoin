@@ -985,6 +985,25 @@ span, div:not(.form), img, svg, path, input {
 	pointer-events: none !important;
 }
 
+.button_connect {
+	height: 8.1494vw;
+	padding: 0vw 3.565vw;
+	border-radius: 56.5365vw;
+	gap: 1.1885vw;
+	border: 0.17vw solid #FFB1AC;
+	box-shadow: 0 1.188vw 6.282vw rgba(255, 177, 172, 0.25);
+	background: linear-gradient(180deg, #ffb1ac 0%, #996a67 100%);
+}
+.button_connect span {
+	font-size: 3.056vw;
+	font-family: 'Regular';
+	letter-spacing: -0.02em;
+}
+.button_connect svg {
+	width: 3.056vw;
+	height: 3.056vw;
+}
+
 
 .flexend {
 	align-items: flex-end;

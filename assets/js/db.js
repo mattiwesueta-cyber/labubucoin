@@ -7,6 +7,22 @@ class GameDatabase {
         this.init();
     }
 
+    // Сохранение TON-адреса кошелька
+    async updateWalletAddress(userId, tonAddress) {
+        if (!this.supabase || !userId) return false;
+        try {
+            const { error } = await this.supabase
+                .from('players')
+                .update({ wallet_address: tonAddress, last_updated: new Date().toISOString() })
+                .eq('tg_id', userId.toString());
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка сохранения адреса кошелька:', error);
+            return false;
+        }
+    }
+
     // Генерация уникального реферального кода
     generateReferralCode() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

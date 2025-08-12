@@ -44,6 +44,9 @@ class LabubuGame {
         };
 
         this.db = null; // Инициализируем в init() после загрузки DOM
+        // TON Connect UI
+        this.tonConnectUI = null;
+        this.walletAddress = null;
         
         this.init();
     }
@@ -523,6 +526,7 @@ class LabubuGame {
         
         // Инициализируем систему уровней и ЖДЕМ её завершения
         await this.initLevelsSystem();
+        this.initTonConnect();
         
         this.setupEventListeners();
         this.updateUI();
@@ -539,6 +543,44 @@ class LabubuGame {
         await new Promise(r => setTimeout(r, 800));
         // Скрываем лоадер после полной загрузки
         if (loader) loader.style.display = 'none';
+    }
+
+    // Инициализация TON Connect UI и обработчиков
+    initTonConnect() {
+        try {
+            if (window.TonConnectUI) {
+                this.tonConnectUI = new window.TonConnectUI.TonConnectUI({
+                    manifestUrl: location.origin + '/labubu_game/tonconnect-manifest.json'
+                });
+            }
+            const btn = document.getElementById('connect_wallet_btn');
+            if (btn) {
+                btn.addEventListener('click', async () => {
+                    await this.handleConnectWallet();
+                });
+            }
+        } catch (_) {}
+    }
+
+    async handleConnectWallet() {
+        try {
+            if (!this.tonConnectUI) return;
+            const connected = await this.tonConnectUI.connectWallet();
+            const account = connected?.account;
+            const address = account?.address || null;
+            if (!address) return;
+            this.walletAddress = address;
+            // Сохраняем в БД, если есть userId и db
+            if (this.userId && this.db) {
+                await this.db.updateWalletAddress(this.userId, address);
+            }
+            // Обновим кнопку
+            const btn = document.getElementById('connect_wallet_btn');
+            if (btn) {
+                const span = btn.querySelector('span');
+                if (span) span.textContent = 'Wallet connected';
+            }
+        } catch (_) {}
     }
 
     async loadTelegramUser(retry = 0) {
