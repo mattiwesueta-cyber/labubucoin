@@ -553,6 +553,23 @@ class LabubuGame {
                 this.tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
                     manifestUrl: location.origin + '/tonconnect-manifest.json'
                 });
+
+                // Обновляем UI при изменении статуса кошелька
+                if (typeof this.tonConnectUI.onStatusChange === 'function') {
+                    this.tonConnectUI.onStatusChange(async (wallet) => {
+                        const addr = wallet?.account?.address || null;
+                        if (addr) {
+                            this.walletAddress = addr;
+                            this.updateWalletUI();
+                            if (this.userId && this.db) {
+                                await this.db.updateWalletAddress(this.userId, addr);
+                            }
+                        } else {
+                            this.walletAddress = null;
+                            this.updateWalletUI();
+                        }
+                    });
+                }
             }
             const btn = document.getElementById('connect_wallet_btn');
             if (btn) {
@@ -568,6 +585,14 @@ class LabubuGame {
     async handleConnectWallet() {
         try {
             if (!this.tonConnectUI) return;
+            // Если уже подключен — отключим и откроем модал заново (переподключение)
+            if (this.tonConnectUI.wallet || this.walletAddress) {
+                if (typeof this.tonConnectUI.disconnect === 'function') {
+                    await this.tonConnectUI.disconnect();
+                }
+                this.walletAddress = null;
+                this.updateWalletUI();
+            }
             // Открываем модал (на случай, если требуется вручную)
             if (typeof this.tonConnectUI.openModal === 'function') {
                 this.tonConnectUI.openModal();
