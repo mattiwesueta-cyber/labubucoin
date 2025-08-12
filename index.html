@@ -16,13 +16,8 @@
 	<script src="assets/js/script.js"></script>
 
 	<script>
-    // Disable zoom (pinch, Ctrl+wheel, Ctrl +/-). Allow fast taps for clicker.
+    // Disable zoom on desktop (Ctrl+wheel, Ctrl +/-). Allow multi-touch taps on mobile.
 	(function() {
-	  // Prevent pinch-zoom (Safari/iOS gesture events)
-	  ['gesturestart','gesturechange','gestureend'].forEach(evt => {
-	    document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive: false });
-	  });
-
 	  // Prevent Ctrl/Cmd + wheel zoom
 	  document.addEventListener('wheel', function(e) {
 	    if (e.ctrlKey || e.metaKey) {
