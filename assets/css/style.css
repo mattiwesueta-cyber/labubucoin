@@ -1005,6 +1005,17 @@ span, div:not(.form), img, svg, path, input {
 	width: 3.056vw;
 	height: 3.056vw;
 }
+.circ_eyes_flicker {
+	width: 5vw;
+	height: 8vw;
+	background: rgb(255, 255, 255);
+	border-radius: 100%;
+	position: absolute;
+	top: 22vw;
+	filter: blur(3vw);
+	mix-blend-mode: color-dodge ;
+	right: 32vw;
+}
 
 
 .flexend {

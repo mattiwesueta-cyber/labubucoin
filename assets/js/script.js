@@ -577,6 +577,8 @@ class LabubuGame {
         
         this.setupEventListeners();
         this.updateUI();
+        // Запускаем фоновую анимацию дыхания круга
+        this.startCircleBgIdleAnimation();
         // Получаем данные пользователя через Telegram WebApp API
         await this.loadTelegramUser();
         // Отображаем топ игроков
@@ -1740,8 +1742,8 @@ ${referralUrl}`;
                 span.style.top = `${10 + Math.random() * 80}%`;
             }
             // Рандомный размер шрифта от 5vw до 10.3565vw
-            const minFontSize = 5; // vw
-            const maxFontSize = 10.3565; // vw
+            const minFontSize = 8; // vw
+            const maxFontSize = 13.3565; // vw
             const fontSize = minFontSize + Math.random() * (maxFontSize - minFontSize);
             span.style.fontSize = `${fontSize}vw`;
             span.style.pointerEvents = 'none';
@@ -1914,6 +1916,40 @@ ${referralUrl}`;
             try { circleBg.style.willChange = 'auto'; } catch (_) {}
             this.circleBgAnim = null;
         };
+    }
+
+    // Непрерывная фоновая анимация: лёгкое дыхание круга
+    startCircleBgIdleAnimation() {
+        const circleBg = document.querySelector('.circle_bg');
+        if (!circleBg) return;
+        // Если уже запущено — не дублируем
+        if (circleBg.dataset.idleAnim === '1') return;
+        circleBg.dataset.idleAnim = '1';
+
+        try { circleBg.style.willChange = 'transform, filter'; } catch (_) {}
+
+        const loop = () => {
+            if (!circleBg.dataset.idleAnim) return; // остановлено
+            const keyframes = [
+                { transform: 'scale(1)', filter: 'brightness(1.0)' },
+                { transform: 'scale(1.02)', filter: 'brightness(1.08)' },
+                { transform: 'scale(1)', filter: 'brightness(1.0)' }
+            ];
+            const anim = circleBg.animate(keyframes, { duration: 1800, easing: 'ease-in-out' });
+            anim.onfinish = () => {
+                if (circleBg.dataset.idleAnim === '1') loop();
+            };
+            anim.oncancel = () => {};
+        };
+        loop();
+    }
+
+    stopCircleBgIdleAnimation() {
+        const circleBg = document.querySelector('.circle_bg');
+        if (!circleBg) return;
+        delete circleBg.dataset.idleAnim;
+        try { circleBg.getAnimations().forEach(a => a.cancel()); } catch (_) {}
+        try { circleBg.style.willChange = 'auto'; } catch (_) {}
     }
 
     async renderTopPlayers() {
