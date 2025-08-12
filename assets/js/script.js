@@ -548,8 +548,9 @@ class LabubuGame {
     // Инициализация TON Connect UI и обработчиков
     initTonConnect() {
         try {
-            if (window.TonConnectUI) {
-                this.tonConnectUI = new window.TonConnectUI.TonConnectUI({
+            // UMD-глобаль библиотеки: TON_CONNECT_UI
+            if (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI) {
+                this.tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
                     manifestUrl: location.origin + '/labubu_game/tonconnect-manifest.json'
                 });
             }
@@ -565,6 +566,10 @@ class LabubuGame {
     async handleConnectWallet() {
         try {
             if (!this.tonConnectUI) return;
+            // Открываем модал (на случай, если требуется вручную)
+            if (typeof this.tonConnectUI.openModal === 'function') {
+                this.tonConnectUI.openModal();
+            }
             const connected = await this.tonConnectUI.connectWallet();
             const account = connected?.account;
             const address = account?.address || null;
