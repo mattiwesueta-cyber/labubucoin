@@ -1702,7 +1702,7 @@ ${referralUrl}`;
             numbersCont.appendChild(span);
             setTimeout(() => {
                 span.style.opacity = '0';
-                span.style.transform += ' scale(1) translateY(-10px)';
+                span.style.transform += ' scale(1) translateY(-20px)';
             }, 150);
             setTimeout(() => {
                 numbersCont.removeChild(span);
