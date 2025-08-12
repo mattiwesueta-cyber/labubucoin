@@ -1052,7 +1052,30 @@ class LabubuGame {
         // Клик только по .labubu_cont
         const labubuCont = document.querySelector('.labubu_cont');
         if (labubuCont) {
+            // Разрешаем эффективные тапы без жестов браузера на этой зоне
+            try { labubuCont.style.touchAction = 'manipulation'; } catch (_) {}
+
+            // Desktop / mouse
             labubuCont.addEventListener('click', () => this.handleClick());
+
+            // Multi-touch: один вызов handleClick на каждый палец
+            labubuCont.addEventListener('touchstart', (e) => {
+                if (!e) return;
+                // предотвращаем последующий "ghost click"
+                try { e.preventDefault(); } catch (_) {}
+                const touches = (e.changedTouches && e.changedTouches.length) ? e.changedTouches.length : 1;
+                for (let i = 0; i < touches; i++) {
+                    this.handleClick();
+                }
+            }, { passive: false });
+
+            // Fallback для некоторых браузеров с Pointer Events
+            labubuCont.addEventListener('pointerdown', (e) => {
+                if (e && e.pointerType === 'touch' && e.isPrimary === false) {
+                    // Доп. палец
+                    this.handleClick();
+                }
+            });
         }
 
         // Обработка клика по карточкам апгрейда
