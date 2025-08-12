@@ -1056,7 +1056,7 @@ class LabubuGame {
             try { labubuCont.style.touchAction = 'manipulation'; } catch (_) {}
 
             // Desktop / mouse
-            labubuCont.addEventListener('click', () => this.handleClick());
+            labubuCont.addEventListener('click', (e) => this.handleClick(e));
 
             // Multi-touch: один вызов handleClick на каждый палец
             labubuCont.addEventListener('touchstart', (e) => {
@@ -1065,7 +1065,7 @@ class LabubuGame {
                 try { e.preventDefault(); } catch (_) {}
                 const touches = (e.changedTouches && e.changedTouches.length) ? e.changedTouches.length : 1;
                 for (let i = 0; i < touches; i++) {
-                    this.handleClick();
+                    this.handleClick(e);
                 }
             }, { passive: false });
 
@@ -1073,7 +1073,7 @@ class LabubuGame {
             labubuCont.addEventListener('pointerdown', (e) => {
                 if (e && e.pointerType === 'touch' && e.isPrimary === false) {
                     // Доп. палец
-                    this.handleClick();
+                    this.handleClick(e);
                 }
             });
         }
@@ -1345,7 +1345,7 @@ ${referralUrl}`;
         }
     }
 
-    handleClick() {
+    handleClick(evt = null) {
         // Проверяем, есть ли достаточно энергии для клика
         const energyCost = this.profitPerClick;
         if (this.currentEnergy < energyCost) {
@@ -1367,7 +1367,6 @@ ${referralUrl}`;
 
         const profit = this.profitPerClick * (this.isBoostActive ? this.boost : 1);
         this.coins += profit;
-        this.showProfitAnimation(profit);
         this.updateUI(); // updateUI() уже включает updateLevelProgressBar()
         this.saveGameData();
         
@@ -1378,7 +1377,8 @@ ${referralUrl}`;
         
         console.log('handleClick: userId =', this.userId, 'coins =', this.coins, 'energy =', this.currentEnergy, 'spent =', energyCost);
         this.updateBalanceInDB();
-        this.spawnRandomProfitSpan(profit);
+        // Визуальный эффект только один: рандомный около точки клика
+        this.spawnRandomProfitSpan(profit, evt);
         this.animateCircleBg();
     }
 
@@ -1661,42 +1661,48 @@ ${referralUrl}`;
         }
     }
 
-    showProfitAnimation(profit) {
-        const numbersCont = document.querySelector('.numbers_cont span');
-        if (numbersCont) {
-            numbersCont.textContent = `+${profit}`;
-            numbersCont.style.opacity = '1';
-            numbersCont.style.transform = 'scale(1.2)';
-            
-            setTimeout(() => {
-                numbersCont.style.opacity = '0';
-                numbersCont.style.transform = 'scale(1)';
-            }, 1000);
-        }
-    }
+    // Удалено: showProfitAnimation — теперь используем только spawnRandomProfitSpan
 
-    spawnRandomProfitSpan(profit) {
+    spawnRandomProfitSpan(profit, evt = null) {
         const numbersCont = document.querySelector('.numbers_cont');
         if (numbersCont) {
             const span = document.createElement('span');
             span.textContent = `+${profit}`;
             span.style.position = 'absolute';
-            // Рандомная позиция внутри контейнера (от 10% до 90%)
-            span.style.left = `${10 + Math.random() * 80}%`;
-            span.style.top = `${10 + Math.random() * 80}%`;
+            // Если есть координаты клика — около точки клика с небольшим разбросом
+            if (evt && (evt.touches || evt.changedTouches || typeof evt.clientX === 'number')) {
+                const contRect = numbersCont.getBoundingClientRect();
+                let cx, cy;
+                if (evt.changedTouches || evt.touches) {
+                    const t = (evt.changedTouches && evt.changedTouches[0]) || evt.touches[0];
+                    cx = t.clientX - contRect.left;
+                    cy = t.clientY - contRect.top;
+                } else {
+                    cx = evt.clientX - contRect.left;
+                    cy = evt.clientY - contRect.top;
+                }
+                const jitter = 12;
+                span.style.left = `${Math.max(0, Math.min(contRect.width, cx + (Math.random()*jitter*2 - jitter)))}px`;
+                span.style.top = `${Math.max(0, Math.min(contRect.height, cy + (Math.random()*jitter*2 - jitter)))}px`;
+                span.style.transform = 'translate(-50%, -50%)';
+            } else {
+                // Рандомная позиция внутри контейнера (от 10% до 90%)
+                span.style.left = `${10 + Math.random() * 80}%`;
+                span.style.top = `${10 + Math.random() * 80}%`;
+            }
             // Рандомный размер шрифта от 5vw до 10.3565vw
             const minFontSize = 5; // vw
             const maxFontSize = 10.3565; // vw
             const fontSize = minFontSize + Math.random() * (maxFontSize - minFontSize);
             span.style.fontSize = `${fontSize}vw`;
             span.style.pointerEvents = 'none';
-            span.style.transition = 'opacity 0.8s, transform 0.8s';
+            span.style.transition = 'opacity 800ms ease, transform 800ms ease';
             span.style.opacity = '1';
-            span.style.transform = 'scale(1.2)';
+            span.style.transform += ' scale(1.2)';
             numbersCont.appendChild(span);
             setTimeout(() => {
                 span.style.opacity = '0';
-                span.style.transform = 'scale(1)';
+                span.style.transform += ' scale(1) translateY(-10px)';
             }, 150);
             setTimeout(() => {
                 numbersCont.removeChild(span);
